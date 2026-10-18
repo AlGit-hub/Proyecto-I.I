@@ -197,7 +197,13 @@
   const MODEL_URL = "https://teachablemachine.withgoogle.com/models/pSEotngcT/";
 
   // Confianza mínima para aceptar un comando (0 a 1)
-  const UMBRAL = 0.65;
+  const UMBRAL = 0.55;
+
+  // Lumi recuerda las últimas lecturas (unos 2 segundos) y usa el mejor valor de cada clase
+  const HISTORIAL_MAX = 8;
+  // Diferencia mínima entre la mejor orden y la segunda, para no confundir habitaciones
+  const MARGEN = 0.15;
+  let historial = [];
 
   // Habitaciones: el "id" debe aparecer en el nombre de la clase (cocina, cuarto, sala)
   const HABITACIONES = [
@@ -388,24 +394,41 @@
           el.classList.toggle("top", i === mejor);
         });
 
-        const orden = interpretar(etiquetas[mejor]);
-        if (orden && scores[mejor] > 0.5) {
-          heard.innerHTML = "👂 Escuché: «" + etiquetas[mejor] + "»" +
-            "<small>" + (scores[mejor] * 100).toFixed(0) + "% seguro</small>";
-        }
+        // La frase dura más que la ventana de 1 segundo del modelo,
+        // así que se toma el mejor valor reciente de cada clase
+        historial.push(Array.from(scores));
+        if (historial.length > HISTORIAL_MAX) historial.shift();
+        const pico = Array.from(scores).map((_, i) => Math.max(...historial.map(h => h[i])));
 
-        const ahora = Date.now();
-        if (orden && scores[mejor] >= UMBRAL && ahora - ultimoComando > 1500) {
-          ultimoComando = ahora;
-          if (orden.hab === "todas") fijarTodas(orden.accion === "on");
-          else fijar(orden.hab, orden.accion === "on", "voz");
-          msg.textContent = "✅ ¡Orden recibida!";
+        const cmds = pico
+          .map((p, i) => ({ p, i }))
+          .filter(c => interpretar(etiquetas[c.i]))
+          .sort((a, b) => b.p - a.p);
+
+        if (cmds.length) {
+          const top = cmds[0];
+          const rival = cmds.length > 1 ? cmds[1].p : 0;
+          const orden = interpretar(etiquetas[top.i]);
+
+          if (top.p > 0.35) {
+            heard.innerHTML = "👂 Escuché: «" + etiquetas[top.i] + "»" +
+              "<small>" + (top.p * 100).toFixed(0) + "% seguro</small>";
+          }
+
+          const ahora = Date.now();
+          if (top.p >= UMBRAL && top.p - rival >= MARGEN && ahora - ultimoComando > 2000) {
+            ultimoComando = ahora;
+            historial = [];
+            if (orden.hab === "todas") fijarTodas(orden.accion === "on");
+            else fijar(orden.hab, orden.accion === "on", "voz");
+            msg.textContent = "✅ ¡Orden recibida!";
+          }
         }
       }, {
         includeSpectrogram: true,
         probabilityThreshold: 0.5,
         invokeCallbackOnNoiseAndUnknown: true,
-        overlapFactor: 0.5
+        overlapFactor: 0.75
       });
 
       btnStart.classList.add("listening");
