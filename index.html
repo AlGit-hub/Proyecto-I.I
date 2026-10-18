@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    --card: rgba(255,255,255,.92);
+    --card: rgba(255,255,255,.95);
     --ink: #3b3355;
     --accent: #ff8fab;
     --accent2: #7c83fd;
@@ -22,9 +22,9 @@
     font-family: "Nunito", "Segoe UI", system-ui, sans-serif;
     color: #fff;
     background: linear-gradient(180deg, #2b2d5b 0%, #5a4a8a 100%);
+    background-attachment: fixed;
     display: flex; flex-direction: column; align-items: center;
     padding: 22px 16px 40px;
-    overflow-x: hidden;
   }
 
   /* Estrellitas */
@@ -33,7 +33,7 @@
   @keyframes twinkle { 0%,100% { transform: scale(1); opacity:.9 } 50% { transform: scale(.6); opacity:.4 } }
 
   header, main, .bubble-wrap { position: relative; z-index: 1; width: 100%; max-width: 980px; }
-  h1 { margin: 6px 0 2px; font-size: clamp(1.7rem, 5vw, 2.5rem); font-weight: 900; text-align: center; }
+  h1 { margin: 6px 0 2px; font-size: clamp(1.5rem, 5vw, 2.5rem); font-weight: 900; text-align: center; }
   .sub { margin: 0 0 14px; text-align: center; font-size: 1.15rem; font-weight: 700; opacity: .9; }
   .chips { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 14px; }
   .chip {
@@ -43,12 +43,28 @@
   }
 
   /* Burbuja de Lumi */
-  .bubble-wrap { display: flex; justify-content: center; margin-bottom: 16px; }
+  .bubble-wrap { display: flex; justify-content: center; margin-bottom: 12px; }
   .bubble {
     background: #fff; color: var(--ink); border: 3px solid #ffe3ec; border-radius: 22px;
-    padding: 12px 20px; font-size: 1.2rem; font-weight: 800; text-align: center;
+    padding: 10px 20px; font-size: 1.15rem; font-weight: 800; text-align: center;
     box-shadow: 0 6px 0 rgba(0,0,0,.1);
   }
+
+  /* Barra del micrófono: se queda pegada arriba al hacer scroll */
+  .micbar {
+    position: sticky; top: 8px; z-index: 20;
+    width: 100%; max-width: 560px; margin: 0 auto 18px;
+    background: var(--card); color: var(--ink);
+    border-radius: 24px; padding: 12px 14px;
+    box-shadow: 0 8px 0 rgba(0,0,0,.12), 0 14px 30px rgba(0,0,0,.2);
+  }
+  .micbar .row { margin-top: 0; }
+  .heard {
+    margin-top: 10px; padding: 8px 12px; border-radius: 16px; background: #f4f1ff;
+    text-align: center; font-size: 1.05rem; font-weight: 800;
+  }
+  .heard small { font-weight: 700; opacity: .7; font-size: .85rem; margin-left: 6px; }
+  #msg { margin-top: 6px; font-weight: 700; text-align: center; font-size: .9rem; }
 
   /* Casa: una tarjeta por habitación */
   #casa { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; margin-bottom: 20px; }
@@ -95,7 +111,7 @@
   button:disabled { opacity: .5; cursor: default; }
   .b-on  { background: #ff9f1c; }
   .b-off { background: #6c63b5; }
-  .b-mic { background: var(--accent); font-size: 1.3rem; padding: 16px 28px; }
+  .b-mic { background: var(--accent); font-size: 1.15rem; padding: 12px 22px; }
   .b-mic.listening { animation: pulse 1.4s infinite; background: var(--good); }
   .b-stop { background: #9aa0b8; }
   .b-all { font-size: .95rem; min-height: 46px; padding: 8px 18px; }
@@ -105,20 +121,13 @@
   .slider .rowb { display: flex; align-items: center; gap: 8px; }
   input[type=range] { flex: 1; height: 32px; accent-color: #ff9f1c; }
 
-  /* Tarjeta del micrófono */
+  /* Tarjeta de detalles */
   .card {
     background: var(--card); color: var(--ink);
-    border-radius: 28px; padding: 22px; max-width: 560px; margin: 0 auto;
+    border-radius: 28px; padding: 18px 22px; max-width: 560px; margin: 0 auto;
     box-shadow: 0 10px 0 rgba(0,0,0,.1), 0 18px 40px rgba(0,0,0,.15);
   }
-  .heard {
-    margin-top: 16px; padding: 14px; border-radius: 20px; background: #f4f1ff;
-    text-align: center; font-size: 1.2rem; font-weight: 800; min-height: 64px;
-  }
-  .heard small { display: block; font-weight: 700; opacity: .7; font-size: .9rem; margin-top: 2px; }
-  #msg { margin-top: 10px; font-weight: 700; text-align: center; min-height: 1.4em; }
-
-  details { margin-top: 14px; }
+  details { margin: 0; }
   summary { cursor: pointer; font-weight: 800; padding: 8px 4px; }
   .bar { margin: 10px 0; }
   .bar .lbl { display: flex; justify-content: space-between; gap: 8px; font-size: .95rem; font-weight: 700; margin-bottom: 4px; }
@@ -126,8 +135,35 @@
   .bar .fill { height: 100%; width: 0; background: var(--accent2); border-radius: 999px; transition: width .15s; }
   .bar.top .fill { background: var(--good); }
 
-  .tips { font-size: 1rem; font-weight: 700; line-height: 1.45; margin-top: 12px; }
+  .tips { font-size: 1rem; font-weight: 700; line-height: 1.45; margin: 12px 0 0; }
   .tips b { color: var(--accent2); }
+
+  /* Celular: habitaciones compactas, una por fila */
+  @media (max-width: 640px) {
+    body { padding: 10px 10px 28px; }
+    h1 { font-size: 1.4rem; margin: 2px 0 8px; }
+    .sub, .chips { display: none; }
+    .bubble-wrap { margin-bottom: 8px; }
+    .bubble { font-size: 1rem; padding: 8px 14px; }
+    .micbar { top: 6px; padding: 10px 12px; margin-bottom: 14px; }
+    .b-mic { font-size: 1.05rem; padding: 10px 16px; min-height: 48px; }
+    .b-stop { min-height: 48px; padding: 10px 16px; }
+
+    #casa { gap: 12px; }
+    .room {
+      max-width: none; flex-basis: 100%;
+      display: grid; grid-template-columns: 100px 1fr;
+      grid-template-areas: "lumi title" "lumi state" "lumi btns" "slider slider";
+      column-gap: 10px; align-items: center; text-align: left; padding: 12px;
+    }
+    .room h2 { grid-area: title; font-size: 1.2rem; margin: 0; }
+    .room .lumi-wrap { grid-area: lumi; }
+    .room svg { width: 100px; }
+    .rstate { grid-area: state; margin: 0; font-size: 1rem; }
+    .room .row { grid-area: btns; justify-content: flex-start; margin-top: 4px; gap: 8px; }
+    .room .row button { min-height: 44px; padding: 8px 12px; font-size: .95rem; }
+    .room .slider { grid-area: slider; margin-top: 6px; }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
@@ -158,6 +194,16 @@
   <div class="bubble" id="burbuja">Zzz... ¡despiértame con tu voz!</div>
 </div>
 
+<!-- Micrófono siempre a la vista -->
+<section class="micbar" aria-label="Control por voz">
+  <div class="row">
+    <button class="b-mic" id="btnStart">🎤 Hablar con Lumi</button>
+    <button class="b-stop" id="btnStop" disabled>✋ Parar</button>
+  </div>
+  <div class="heard" id="heard">👂 Aquí verás lo que Lumi escucha</div>
+  <div id="msg">Toca «Hablar con Lumi» y permite el micrófono.</div>
+</section>
+
 <main>
   <div id="casa"></div>
 
@@ -166,18 +212,7 @@
     <button class="b-off b-all" id="btnTodasOff">🌙 Apagar todas</button>
   </div>
 
-  <section class="card" aria-label="Control por voz">
-    <div class="row" style="margin-top:0">
-      <button class="b-mic" id="btnStart">🎤 Hablar con Lumi</button>
-      <button class="b-stop" id="btnStop" disabled>✋ Parar</button>
-    </div>
-
-    <div class="heard" id="heard">
-      Aquí verás lo que Lumi escucha
-      <small>Habla fuerte y claro, cerca del micrófono</small>
-    </div>
-    <div id="msg">Toca «Hablar con Lumi» y permite el micrófono.</div>
-
+  <section class="card" aria-label="Detalles">
     <details>
       <summary>🔍 Ver detalles (para curiosos)</summary>
       <div id="barras"></div>
@@ -411,8 +446,8 @@
           const orden = interpretar(etiquetas[top.i]);
 
           if (top.p > 0.35) {
-            heard.innerHTML = "👂 Escuché: «" + etiquetas[top.i] + "»" +
-              "<small>" + (top.p * 100).toFixed(0) + "% seguro</small>";
+            heard.innerHTML = "👂 «" + etiquetas[top.i] + "»" +
+              "<small>" + (top.p * 100).toFixed(0) + "%</small>";
           }
 
           const ahora = Date.now();
