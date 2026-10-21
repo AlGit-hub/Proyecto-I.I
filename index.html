@@ -121,12 +121,15 @@
 
   /* ---------- Controles ---------- */
   .controles { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
-  .btn { padding: 11px 18px; border-radius: 12px; border: 1px solid var(--muro); background: var(--noche2); cursor: pointer; font-weight: 600; transition: background .2s, transform .1s; }
+  .btn .ico { width: 18px; height: 18px; flex: none; }
+  .btn .corto { display: none; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 12px; border: 1px solid var(--muro); background: var(--noche2); cursor: pointer; font-weight: 600; transition: background .2s, transform .1s; }
   .btn:hover:not(:disabled) { background: #1E2A57; }
   .btn:active:not(:disabled) { transform: translateY(1px); }
   .btn:disabled { opacity: .45; cursor: not-allowed; }
   .btn.principal { background: var(--luz); border-color: var(--luz); color: #1A1330; }
   .btn.principal:hover:not(:disabled) { background: #FFD479; }
+  .btn.arduino[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: #0B2A1F; }
 
   /* ---------- Ajustes ---------- */
   details.ajustes { margin-top: 28px; border: 1px solid var(--muro); border-radius: 16px; background: rgba(22,31,66,.55); }
@@ -150,11 +153,35 @@
   .nota { color: var(--tenue); font-size: .82rem; line-height: 1.45; margin: 8px 0 0; }
 
   @media (max-width: 860px) {
-    .escena { grid-template-columns: 1fr; }
-    .lumi { flex-direction: row; flex-wrap: wrap; align-items: center; }
-    .lumi .orbe-caja { width: 124px; }
-    .lumi .burbuja { flex: 1 1 240px; }
-    .lumi .escuche, .lumi .decision, .lumi .ejemplo { flex-basis: 100%; margin: 0; }
+    .pagina { padding: 16px 16px calc(118px + env(safe-area-inset-bottom)); }
+    .cabecera { margin-bottom: 14px; gap: 10px; }
+    .marca h1 { font-size: 1.8rem; }
+    .marca p { font-size: .9rem; }
+    .estados { gap: 6px; }
+    .ficha { padding: 5px 10px; font-size: .78rem; gap: 6px; }
+    .escena { grid-template-columns: 1fr; gap: 18px; }
+    .lumi { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+    .lumi .orbe-caja { width: 108px; }
+    .lumi .burbuja { flex: 1 1 200px; min-height: 0; padding: 12px 14px; font-size: 1.05rem; }
+    .lumi .escuche, .lumi .decision, .lumi .ejemplo { flex-basis: 100%; margin: 0; min-height: 0; font-size: .85rem; }
+    .lumi .escuche:empty, .lumi .decision:empty { display: none; }
+
+    /* Dock: los controles siempre al alcance del pulgar */
+    .controles {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; margin: 0;
+      display: flex; flex-wrap: nowrap; gap: 6px; justify-content: space-between;
+      padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+      background: rgba(14,21,48,.9);
+      -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4);
+      border-top: 1px solid var(--muro);
+    }
+    .controles .btn { flex: 1 1 0; min-width: 0; flex-direction: column; justify-content: center; gap: 4px; padding: 9px 2px; font-size: .74rem; border-radius: 14px; background: var(--noche2); border-color: var(--muro); color: var(--niebla); }
+    .controles .btn .ico { width: 22px; height: 22px; }
+    .controles .btn .txt { display: none; }
+    .controles .btn .corto { display: inline; }
+    .controles .btn.escucha[aria-pressed="true"] { background: var(--luz); border-color: var(--luz); color: #1A1330; }
+    .controles .btn.arduino[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: #0B2A1F; }
+
     .ajustes-cuerpo { grid-template-columns: 1fr; }
     .plano { min-height: 380px; }
     .lampara { top: 30%; width: 40px; height: 40px; }
@@ -204,10 +231,10 @@
     </div>
 
     <div class="controles">
-      <button class="btn principal" id="btnArduino">Conectar Arduino</button>
-      <button class="btn principal" id="btnEscuchar">Activar a Lumi</button>
-      <button class="btn" id="btnOn">Encender todas</button>
-      <button class="btn" id="btnOff">Apagar todas</button>
+      <button class="btn principal arduino" id="btnArduino" aria-pressed="false"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0V8zM12 18v4"/></svg><span class="txt">Conectar Arduino</span><span class="corto">Arduino</span></button>
+      <button class="btn principal escucha" id="btnEscuchar" aria-pressed="false"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM19 11a7 7 0 0 1-14 0M12 18v4"/></svg><span class="txt">Activar a Lumi</span><span class="corto">Escuchar</span></button>
+      <button class="btn" id="btnOn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span class="txt">Encender todas</span><span class="corto">Encender</span></button>
+      <button class="btn" id="btnOff"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span class="txt">Apagar todas</span><span class="corto">Apagar</span></button>
     </div>
 
     <details class="ajustes">
@@ -242,6 +269,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@0.4.0/dist/speech-commands.min.js"></script>
 <script>
 const $ = id => document.getElementById(id);
+// Cambia el texto largo (escritorio) y el corto (dock del celular) de un botón, y su estado activo
+function etiquetaBtn(id, largo, corto, activo) {
+  const b = document.getElementById(id);
+  b.querySelector('.txt').textContent = largo;
+  b.querySelector('.corto').textContent = corto;
+  b.setAttribute('aria-pressed', activo ? 'true' : 'false');
+}
 const log = msg => {
   const d = document.createElement('div');
   d.textContent = new Date().toLocaleTimeString() + '  ' + msg;
@@ -425,7 +459,7 @@ async function conectarArduino() {
     log('Puerto abierto. Esperando a que el Arduino reinicie (2 s)…');
     await new Promise(r => setTimeout(r, 2000)); // el Uno se reinicia al abrir el puerto
     ficha('fichaArduino', 'txtArduino', 'conectado', 'ok');
-    $('btnArduino').textContent = 'Desconectar Arduino';
+    etiquetaBtn('btnArduino', 'Desconectar Arduino', 'Desconectar', true);
     log('Arduino listo.');
     decir('Arduino conectado. Ya puedo encender las luces de verdad.');
   } catch (e) {
@@ -442,7 +476,7 @@ async function desconectarArduino() {
   } catch (e) { log('Error al cerrar: ' + e.message); }
   puerto = null; escritor = null;
   ficha('fichaArduino', 'txtArduino', 'sin conectar', '');
-  $('btnArduino').textContent = 'Conectar Arduino';
+  etiquetaBtn('btnArduino', 'Conectar Arduino', 'Arduino', false);
   log('Arduino desconectado.');
 }
 
@@ -601,7 +635,7 @@ async function cargarYEscuchar() {
     escuchando = true;
     orbeEnReposo();
     ficha('fichaVoz', 'txtVoz', 'escuchando', 'ok');
-    $('btnEscuchar').textContent = 'Pausar a Lumi';
+    etiquetaBtn('btnEscuchar', 'Pausar a Lumi', 'Pausar', true);
     decir('Te escucho. Dime, por ejemplo: «Oye Lumi, encender cocina».');
   } catch (e) {
     log('Error con el modelo: ' + e.message);
@@ -619,7 +653,7 @@ async function pararEscucha() {
   anillo(0);
   orbeEnReposo();
   ficha('fichaVoz', 'txtVoz', 'en pausa', 'espera');
-  $('btnEscuchar').textContent = 'Activar a Lumi';
+  etiquetaBtn('btnEscuchar', 'Activar a Lumi', 'Escuchar', false);
   decir('Me quedo en pausa. Pulsa «Activar a Lumi» cuando quieras hablarme.');
   log('Escucha detenida.');
 }
