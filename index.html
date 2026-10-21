@@ -222,7 +222,7 @@
         <p class="burbuja" id="burbuja" aria-live="polite">Hola, soy Lumi. Conecta el Arduino, actívame y dime qué luz quieres.</p>
         <p class="escuche" id="escuche"></p>
         <p class="decision" id="decision" aria-live="polite"></p>
-        <p class="ejemplo">Prueba con <q>Oye Lumi, encender cocina</q> o <q>Oye Lumi, apagar sala</q>. El anillo muestra qué tan segura estoy de lo que oí; la marca blanca es tu mínimo.</p>
+        <p class="ejemplo">Prueba con <q>Oye Lumi, enciende la cocina</q>, <q>Oye Lumi, apaga la sala</q> o <q>Oye Lumi, apaga todo</q>. El anillo muestra qué tan segura estoy de lo que oí; la marca blanca es tu mínimo.</p>
       </section>
 
       <section aria-label="Plano de la casa">
@@ -243,7 +243,7 @@
         <div>
           <label class="campo">
             <span>Modelo de Teachable Machine (enlace o carpeta local como ./modelo/)</span>
-            <input type="text" id="urlModelo" value="https://teachablemachine.withgoogle.com/models/pSEotngcT/">
+            <input type="text" id="urlModelo" value="https://teachablemachine.withgoogle.com/models/LfL5sSgUa/">
           </label>
           <div class="campo">
             <span>Confianza mínima para aceptar una orden</span>
@@ -255,7 +255,7 @@
             <div class="fila"><select id="selVoz" aria-label="Voz de Lumi"></select><button class="btn" id="btnProbarVoz" type="button">Probar</button></div>
           </div>
           <div id="barras"></div>
-          <p class="nota">Cada clase debe incluir «encender» o «apagar» y el nombre de la habitación (sala, cocina, cuarto). Las clases de ruido se ignoran. Cuando uses los botones, Lumi no responde: solo contesta a la voz.</p>
+          <p class="nota">Cada clase debe incluir «enciende» o «apaga» y la habitación (sala, cocina, cuarto) o la palabra «todo» para las tres luces. Las clases de ruido se ignoran. Cuando uses los botones, Lumi no responde: solo contesta a la voz.</p>
         </div>
         <div>
           <div class="campo"><span>Registro</span><div id="log"></div></div>
@@ -524,10 +524,12 @@ function accionDe(etiqueta) {
   if (t.includes('apag')) on = false;
   else if (t.includes('prend') || t.includes('encend') || t.includes('enciend')) on = true;
   else return null;
-  let hab = 'todas';
+  let hab = null;
   if (t.includes('sala')) hab = 'sala';
   else if (t.includes('cocina')) hab = 'cocina';
   else if (t.includes('cuarto')) hab = 'cuarto';
+  else if (t.includes('todo') || t.includes('toda')) hab = 'todas';
+  if (!hab) return null;   // clase sin habitación ni «todo»: se ignora
   return { on, hab };
 }
 
@@ -636,7 +638,7 @@ async function cargarYEscuchar() {
     orbeEnReposo();
     ficha('fichaVoz', 'txtVoz', 'escuchando', 'ok');
     etiquetaBtn('btnEscuchar', 'Pausar a Lumi', 'Pausar', true);
-    decir('Te escucho. Dime, por ejemplo: «Oye Lumi, encender cocina».');
+    decir('Te escucho. Dime, por ejemplo: «Oye Lumi, enciende la cocina» o «Oye Lumi, apaga todo».');
   } catch (e) {
     log('Error con el modelo: ' + e.message);
     ficha('fichaVoz', 'txtVoz', 'error', '');
