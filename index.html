@@ -3,494 +3,633 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lumi, la luz de la casa</title>
+<title>Lumi · Luz de casa por voz</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --card: rgba(255,255,255,.95);
-    --ink: #3b3355;
-    --accent: #ff8fab;
-    --accent2: #7c83fd;
-    --good: #5ccf9a;
-    --sun: #ffd23f;
+    --noche:  #0E1530;
+    --noche2: #161F42;
+    --muro:   #34417A;
+    --niebla: #E4EAFF;
+    --tenue:  #93A0D0;
+    --luz:    #FFC857;
+    --luz2:   #FF9F43;
+    --ok:     #6EE7B7;
+    --err:    #FF8F8F;
+    --fuente: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; }
+  html { color-scheme: dark; }
+  /* La página entera se ilumina con cada luz encendida (0 a 1) */
+  @property --amb { syntax: "<number>"; inherits: true; initial-value: 0; }
   body {
-    min-height: 100vh;
-    font-family: "Nunito", "Segoe UI", system-ui, sans-serif;
-    color: #fff;
-    background: linear-gradient(180deg, #2b2d5b 0%, #5a4a8a 100%);
-    background-attachment: fixed;
-    display: flex; flex-direction: column; align-items: center;
-    padding: 22px 16px 40px;
+    margin: 0; min-height: 100vh;
+    font-family: var(--fuente); color: var(--niebla);
+    --amb: 0;
+    transition: --amb .9s ease;
+    background:
+      radial-gradient(1100px 620px at 50% 115%, rgba(255,200,87, calc(var(--amb) * .20)), transparent 65%),
+      radial-gradient(900px 500px at 15% -10%, rgba(255,200,87, calc(.08 + var(--amb) * .06)), transparent 60%),
+      var(--noche);
   }
+  button, input, summary { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--luz); outline-offset: 3px; }
 
-  /* Estrellitas */
-  .sky { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
-  .star { position: absolute; font-size: 1.4rem; opacity: .9; animation: twinkle 3s infinite ease-in-out; }
-  @keyframes twinkle { 0%,100% { transform: scale(1); opacity:.9 } 50% { transform: scale(.6); opacity:.4 } }
+  .pagina { max-width: 1120px; margin: 0 auto; padding: 24px 20px 48px; }
 
-  header, main, .bubble-wrap { position: relative; z-index: 1; width: 100%; max-width: 980px; }
-  h1 { margin: 6px 0 2px; font-size: clamp(1.5rem, 5vw, 2.5rem); font-weight: 900; text-align: center; }
-  .sub { margin: 0 0 14px; text-align: center; font-size: 1.15rem; font-weight: 700; opacity: .9; }
-  .chips { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 14px; }
-  .chip {
-    background: var(--card); color: var(--ink); border-radius: 999px;
-    padding: 8px 18px; font-weight: 800; font-size: 1rem;
-    box-shadow: 0 4px 0 rgba(0,0,0,.12);
+  /* ---------- Encabezado ---------- */
+  .cabecera { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+  .marca { display: flex; align-items: baseline; gap: 14px; }
+  .marca h1 { margin: 0; font-size: 2.1rem; font-weight: 800; letter-spacing: -.03em; }
+  .marca p { margin: 0; color: var(--tenue); font-size: .98rem; }
+  .estados { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ficha { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 99px; background: var(--noche2); border: 1px solid var(--muro); font-size: .88rem; }
+  .ficha i { width: 9px; height: 9px; border-radius: 50%; background: var(--err); }
+  .ficha.ok i { background: var(--ok); }
+  .ficha.espera i { background: var(--luz); }
+
+  /* ---------- Escena principal ---------- */
+  .escena { display: grid; grid-template-columns: minmax(280px, 360px) 1fr; gap: 32px; align-items: start; }
+
+  .lumi { display: flex; flex-direction: column; gap: 18px; }
+  /* Anillo de confianza: se llena con lo que Lumi entiende; la marca es tu mínimo */
+  .orbe-caja { position: relative; width: 176px; aspect-ratio: 1; display: grid; place-items: center; }
+  .orbe-caja .orbe { width: 73%; height: 73%; }
+  .anillo { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .anillo .pista { fill: none; stroke: var(--muro); stroke-width: 5; opacity: .55; }
+  .anillo .prog { fill: none; stroke: var(--luz); stroke-width: 5; stroke-dasharray: 502.65; stroke-dashoffset: 502.65; transition: stroke-dashoffset .12s linear, stroke .2s; }
+  .anillo.pasa .prog { stroke: var(--ok); }
+  .anillo .marca { stroke: var(--niebla); stroke-width: 3; stroke-linecap: round; }
+  .orbe {
+    width: 128px; height: 128px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #FFF4D6 0%, var(--luz) 45%, var(--luz2) 100%);
+    box-shadow: 0 0 70px rgba(255,200,87,.45);
+    transition: filter .4s, box-shadow .4s;
   }
+  .orbe[data-estado="reposo"] { filter: saturate(.55) brightness(.75); box-shadow: 0 0 30px rgba(255,200,87,.18); }
+  .orbe[data-estado="escucha"] { animation: respira 3.4s ease-in-out infinite; }
+  .orbe[data-estado="habla"] { animation: late .55s ease-in-out infinite alternate; }
+  @keyframes respira { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+  @keyframes late { from { transform: scale(1); } to { transform: scale(1.1); } }
 
-  /* Burbuja de Lumi */
-  .bubble-wrap { display: flex; justify-content: center; margin-bottom: 12px; }
-  .bubble {
-    background: #fff; color: var(--ink); border: 3px solid #ffe3ec; border-radius: 22px;
-    padding: 10px 20px; font-size: 1.15rem; font-weight: 800; text-align: center;
-    box-shadow: 0 6px 0 rgba(0,0,0,.1);
+  .burbuja {
+    margin: 0; padding: 16px 18px; min-height: 5.6em;
+    background: var(--noche2); border: 1px solid var(--muro);
+    border-radius: 20px 20px 20px 4px;
+    font-size: 1.22rem; line-height: 1.35; font-weight: 600; letter-spacing: -.01em;
   }
+  .escuche { margin: -6px 0 0; min-height: 1.3em; color: var(--tenue); font-size: .92rem; }
+  .decision { margin: -10px 0 0; min-height: 1.3em; color: var(--luz); font-size: .9rem; }
+  .ejemplo { margin: 0; color: var(--tenue); font-size: .92rem; line-height: 1.5; }
+  .ejemplo q { color: var(--niebla); quotes: "«" "»"; }
 
-  /* Barra del micrófono: se queda pegada arriba al hacer scroll */
-  .micbar {
-    position: sticky; top: 8px; z-index: 20;
-    width: 100%; max-width: 560px; margin: 0 auto 18px;
-    background: var(--card); color: var(--ink);
-    border-radius: 24px; padding: 12px 14px;
-    box-shadow: 0 8px 0 rgba(0,0,0,.12), 0 14px 30px rgba(0,0,0,.2);
+  /* ---------- Plano de la casa ---------- */
+  .plano {
+    display: grid; grid-template-columns: 1.35fr 1fr; grid-template-rows: 1fr 1fr;
+    gap: 6px; padding: 6px; background: var(--muro);
+    border-radius: 22px; min-height: 400px;
+    grid-template-areas: "sala cocina" "sala cuarto";
   }
-  .micbar .row { margin-top: 0; }
-  .heard {
-    margin-top: 10px; padding: 8px 12px; border-radius: 16px; background: #f4f1ff;
-    text-align: center; font-size: 1.05rem; font-weight: 800;
+  .hab {
+    position: relative; overflow: hidden; border: 0; cursor: pointer; text-align: left;
+    padding: 18px 20px; background: #0A1028; color: var(--niebla);
+    display: flex; flex-direction: column; justify-content: flex-end; gap: 2px;
+    transition: background .5s;
   }
-  .heard small { font-weight: 700; opacity: .7; font-size: .85rem; margin-left: 6px; }
-  #msg { margin-top: 6px; font-weight: 700; text-align: center; font-size: .9rem; }
+  .hab[data-hab="sala"] { grid-area: sala; border-radius: 16px 4px 4px 16px; }
+  .hab[data-hab="cocina"] { grid-area: cocina; border-radius: 4px 16px 4px 4px; }
+  .hab[data-hab="cuarto"] { grid-area: cuarto; border-radius: 4px 4px 16px 4px; }
+  .hab:hover { background: #0D1534; }
+  .hab[aria-pressed="true"] { background: radial-gradient(circle at 50% 42%, rgba(255,200,87,.26), rgba(255,159,67,.07) 60%, #0A1028 100%); }
 
-  /* Casa: una tarjeta por habitación */
-  #casa { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; margin-bottom: 20px; }
-  .room {
-    flex: 1 1 260px; max-width: 300px; text-align: center;
-    border-radius: 28px; padding: 18px 16px 20px;
-    background: #3b3566; color: #fff;
-    box-shadow: 0 10px 0 rgba(0,0,0,.18), 0 18px 40px rgba(0,0,0,.2);
-    transition: background .6s ease, color .6s ease;
+  .lampara {
+    position: absolute; left: 50%; top: 42%; width: 54px; height: 54px; transform: translate(-50%, -50%);
+    border-radius: 50%; border: 2px solid var(--muro); display: grid; place-items: center;
+    transition: all .45s;
   }
-  .room.on { background: #fff4c9; color: var(--ink); }
-  .room h2 { margin: 0 0 4px; font-size: 1.5rem; font-weight: 900; }
-  .room svg { width: min(170px, 55vw); height: auto; overflow: visible; }
-  .lumi-wrap { animation: breathe 4s infinite ease-in-out; transform-origin: 50% 90%; }
-  .room.on .lumi-wrap { animation: hop 1.6s infinite ease-in-out; }
-  @keyframes breathe { 0%,100% { transform: scale(1) } 50% { transform: scale(1.03) } }
-  @keyframes hop { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+  .lampara::after { content: ""; width: 16px; height: 16px; border-radius: 50%; background: var(--muro); transition: all .45s; }
+  .hab[aria-pressed="true"] .lampara { border-color: var(--luz); box-shadow: 0 0 90px 36px rgba(255,200,87,.38); }
+  .hab[aria-pressed="true"] .lampara::after { background: var(--luz); box-shadow: 0 0 18px 6px rgba(255,200,87,.8); }
 
-  .glow { opacity: 0; transition: opacity .6s; }
-  .bulb { fill: #c9c4dd; transition: fill .6s; }
-  .room.on .bulb { fill: var(--sun); }
-  .face-on, .sparkles { display: none; }
-  .face-off, .zzz { display: block; }
-  .room.on .face-on, .room.on .sparkles { display: block; }
-  .room.on .face-off, .room.on .zzz { display: none; }
-  .sparkles text { animation: twinkle 1.6s infinite ease-in-out; }
-  .zzz text { animation: floatz 3s infinite ease-in-out; fill: #b3abdb; font-weight: 900; }
-  @keyframes floatz { 0%,100% { transform: translateY(0); opacity: .5 } 50% { transform: translateY(-8px); opacity: 1 } }
+  .hab .nombre { position: relative; font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em; text-transform: capitalize; }
+  .hab .estado { position: relative; font-weight: 600; color: var(--tenue); }
+  .hab[aria-pressed="true"] .estado { color: var(--luz); }
+  .hab .pin { position: relative; font-size: .82rem; color: var(--tenue); }
 
-  .rstate { margin: 4px 0 0; font-size: 1.2rem; font-weight: 900; }
+  /* ---------- Controles ---------- */
+  .controles { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+  .btn { padding: 11px 18px; border-radius: 12px; border: 1px solid var(--muro); background: var(--noche2); cursor: pointer; font-weight: 600; transition: background .2s, transform .1s; }
+  .btn:hover:not(:disabled) { background: #1E2A57; }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn.principal { background: var(--luz); border-color: var(--luz); color: #1A1330; }
+  .btn.principal:hover:not(:disabled) { background: #FFD479; }
 
-  /* Botones */
-  .row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 12px; }
-  button {
-    font-family: inherit; font-weight: 900; font-size: 1.05rem;
-    min-height: 52px; padding: 10px 20px; border: 0; border-radius: 999px;
-    cursor: pointer; color: #fff; background: var(--accent2);
-    box-shadow: 0 6px 0 rgba(0,0,0,.18);
-    transition: transform .08s, box-shadow .08s, filter .2s;
+  /* ---------- Ajustes ---------- */
+  details.ajustes { margin-top: 28px; border: 1px solid var(--muro); border-radius: 16px; background: rgba(22,31,66,.55); }
+  details.ajustes summary { cursor: pointer; padding: 14px 18px; font-weight: 600; list-style: none; }
+  details.ajustes summary::-webkit-details-marker { display: none; }
+  details.ajustes summary::before { content: "▸"; display: inline-block; margin-right: 10px; color: var(--tenue); transition: transform .2s; }
+  details.ajustes[open] summary::before { transform: rotate(90deg); }
+  .ajustes-cuerpo { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 4px 18px 20px; }
+  .campo { display: block; margin-bottom: 14px; }
+  .campo > span { display: block; color: var(--tenue); font-size: .85rem; margin-bottom: 5px; }
+  input[type=text], select { width: 100%; padding: 9px 11px; border-radius: 10px; border: 1px solid var(--muro); background: #0A1028; }
+  .fila { display: flex; align-items: center; gap: 10px; }
+  .fila input[type=range] { flex: 1; accent-color: var(--luz); }
+  input[type=checkbox] { accent-color: var(--luz); width: 18px; height: 18px; }
+  .barra { margin: 6px 0; }
+  .barra .et { display: flex; justify-content: space-between; gap: 10px; font-size: .82rem; margin-bottom: 3px; }
+  .barra .fondo { height: 7px; background: #0A1028; border-radius: 6px; overflow: hidden; }
+  .barra .valor { height: 100%; width: 0; background: var(--luz); transition: width .1s; }
+  .barra.ignorada .valor { background: var(--muro); }
+  #log { height: 190px; overflow: auto; font-family: ui-monospace, Consolas, monospace; font-size: .78rem; line-height: 1.5; background: #0A1028; border-radius: 10px; padding: 10px; }
+  .nota { color: var(--tenue); font-size: .82rem; line-height: 1.45; margin: 8px 0 0; }
+
+  @media (max-width: 860px) {
+    .escena { grid-template-columns: 1fr; }
+    .lumi { flex-direction: row; flex-wrap: wrap; align-items: center; }
+    .lumi .orbe-caja { width: 124px; }
+    .lumi .burbuja { flex: 1 1 240px; }
+    .lumi .escuche, .lumi .decision, .lumi .ejemplo { flex-basis: 100%; margin: 0; }
+    .ajustes-cuerpo { grid-template-columns: 1fr; }
+    .plano { min-height: 380px; }
+    .lampara { top: 30%; width: 40px; height: 40px; }
+    .hab .nombre { font-size: 1.35rem; }
+    .hab { padding: 14px 16px; }
   }
-  button:hover { filter: brightness(1.06); }
-  button:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.18); }
-  button:focus-visible, input:focus-visible, summary:focus-visible { outline: 4px solid #ffb703; outline-offset: 3px; }
-  button:disabled { opacity: .5; cursor: default; }
-  .b-on  { background: #ff9f1c; }
-  .b-off { background: #6c63b5; }
-  .b-mic { background: var(--accent); font-size: 1.15rem; padding: 12px 22px; }
-  .b-mic.listening { animation: pulse 1.4s infinite; background: var(--good); }
-  .b-stop { background: #9aa0b8; }
-  .b-all { font-size: .95rem; min-height: 46px; padding: 8px 18px; }
-  @keyframes pulse { 0% { box-shadow: 0 6px 0 rgba(0,0,0,.18), 0 0 0 0 rgba(92,207,154,.6) } 100% { box-shadow: 0 6px 0 rgba(0,0,0,.18), 0 0 0 22px rgba(92,207,154,0) } }
-
-  .slider { margin-top: 14px; font-weight: 800; font-size: 1rem; }
-  .slider .rowb { display: flex; align-items: center; gap: 8px; }
-  input[type=range] { flex: 1; height: 32px; accent-color: #ff9f1c; }
-
-  /* Tarjeta de detalles */
-  .card {
-    background: var(--card); color: var(--ink);
-    border-radius: 28px; padding: 18px 22px; max-width: 560px; margin: 0 auto;
-    box-shadow: 0 10px 0 rgba(0,0,0,.1), 0 18px 40px rgba(0,0,0,.15);
-  }
-  details { margin: 0; }
-  summary { cursor: pointer; font-weight: 800; padding: 8px 4px; }
-  .bar { margin: 10px 0; }
-  .bar .lbl { display: flex; justify-content: space-between; gap: 8px; font-size: .95rem; font-weight: 700; margin-bottom: 4px; }
-  .bar .track { height: 18px; background: #e6e1f7; border-radius: 999px; overflow: hidden; }
-  .bar .fill { height: 100%; width: 0; background: var(--accent2); border-radius: 999px; transition: width .15s; }
-  .bar.top .fill { background: var(--good); }
-
-  .tips { font-size: 1rem; font-weight: 700; line-height: 1.45; margin: 12px 0 0; }
-  .tips b { color: var(--accent2); }
-
-  /* Celular: habitaciones compactas, una por fila */
-  @media (max-width: 640px) {
-    body { padding: 10px 10px 28px; }
-    h1 { font-size: 1.4rem; margin: 2px 0 8px; }
-    .sub, .chips { display: none; }
-    .bubble-wrap { margin-bottom: 8px; }
-    .bubble { font-size: 1rem; padding: 8px 14px; }
-    .micbar { top: 6px; padding: 10px 12px; margin-bottom: 14px; }
-    .b-mic { font-size: 1.05rem; padding: 10px 16px; min-height: 48px; }
-    .b-stop { min-height: 48px; padding: 10px 16px; }
-
-    #casa { gap: 12px; }
-    .room {
-      max-width: none; flex-basis: 100%;
-      display: grid; grid-template-columns: 100px 1fr;
-      grid-template-areas: "lumi title" "lumi state" "lumi btns" "slider slider";
-      column-gap: 10px; align-items: center; text-align: left; padding: 12px;
-    }
-    .room h2 { grid-area: title; font-size: 1.2rem; margin: 0; }
-    .room .lumi-wrap { grid-area: lumi; }
-    .room svg { width: 100px; }
-    .rstate { grid-area: state; margin: 0; font-size: 1rem; }
-    .room .row { grid-area: btns; justify-content: flex-start; margin-top: 4px; gap: 8px; }
-    .room .row button { min-height: 44px; padding: 8px 12px; font-size: .95rem; }
-    .room .slider { grid-area: slider; margin-top: 6px; }
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    * { animation: none !important; transition: none !important; }
+    .orbe, .orbe[data-estado] { animation: none !important; }
+    * { transition-duration: .01ms !important; }
   }
 </style>
 </head>
 <body>
+<div class="pagina">
 
-<div class="sky" aria-hidden="true">
-  <span class="star" style="top:6%;left:8%">⭐</span>
-  <span class="star" style="top:12%;left:78%;animation-delay:.8s">✨</span>
-  <span class="star" style="top:30%;left:92%;animation-delay:1.4s">⭐</span>
-  <span class="star" style="top:55%;left:4%;animation-delay:2s">✨</span>
-  <span class="star" style="top:75%;left:88%;animation-delay:.4s">⭐</span>
-  <span class="star" style="top:88%;left:14%;animation-delay:1.8s">✨</span>
-</div>
+  <header class="cabecera">
+    <div class="marca">
+      <h1>Lumi</h1>
+      <p>La luz de tu casa, a tu voz</p>
+    </div>
+    <div class="estados" aria-live="polite">
+      <span class="ficha" id="fichaArduino"><i></i><b>Arduino</b> <span id="txtArduino">sin conectar</span></span>
+      <span class="ficha" id="fichaVoz"><i></i><b>Voz</b> <span id="txtVoz">sin activar</span></span>
+    </div>
+  </header>
 
-<header>
-  <h1>🏠 Lumi, la luz de la casa</h1>
-  <p class="sub">¡Háblale a Lumi y ella obedece!</p>
-  <div class="chips">
-    <span class="chip">🌞 «Oye Lumi, encender cocina»</span>
-    <span class="chip">🌙 «Oye Lumi, apagar cuarto»</span>
-  </div>
-</header>
+  <main>
+    <div class="escena">
+      <section class="lumi" aria-label="Lumi">
+        <div class="orbe-caja" aria-hidden="true">
+          <svg class="anillo" id="anillo" viewBox="0 0 176 176">
+            <circle class="pista" cx="88" cy="88" r="80"/>
+            <circle class="prog" id="prog" cx="88" cy="88" r="80" transform="rotate(-90 88 88)"/>
+            <g id="marca" transform="rotate(306 88 88)"><line class="marca" x1="88" y1="1" x2="88" y2="14"/></g>
+          </svg>
+          <div class="orbe" id="orbe" data-estado="reposo"></div>
+        </div>
+        <p class="burbuja" id="burbuja" aria-live="polite">Hola, soy Lumi. Conecta el Arduino, actívame y dime qué luz quieres.</p>
+        <p class="escuche" id="escuche"></p>
+        <p class="decision" id="decision" aria-live="polite"></p>
+        <p class="ejemplo">Prueba con <q>Oye Lumi, encender cocina</q> o <q>Oye Lumi, apagar sala</q>. El anillo muestra qué tan segura estoy de lo que oí; la marca blanca es tu mínimo.</p>
+      </section>
 
-<div class="bubble-wrap">
-  <div class="bubble" id="burbuja">Zzz... ¡despiértame con tu voz!</div>
-</div>
+      <section aria-label="Plano de la casa">
+        <div class="plano" id="plano"></div>
+      </section>
+    </div>
 
-<!-- Micrófono siempre a la vista -->
-<section class="micbar" aria-label="Control por voz">
-  <div class="row">
-    <button class="b-mic" id="btnStart">🎤 Hablar con Lumi</button>
-    <button class="b-stop" id="btnStop" disabled>✋ Parar</button>
-  </div>
-  <div class="heard" id="heard">👂 Aquí verás lo que Lumi escucha</div>
-  <div id="msg">Toca «Hablar con Lumi» y permite el micrófono.</div>
-</section>
+    <div class="controles">
+      <button class="btn principal" id="btnArduino">Conectar Arduino</button>
+      <button class="btn principal" id="btnEscuchar">Activar a Lumi</button>
+      <button class="btn" id="btnOn">Encender todas</button>
+      <button class="btn" id="btnOff">Apagar todas</button>
+    </div>
 
-<main>
-  <div id="casa"></div>
-
-  <div class="row" style="margin: 0 0 22px">
-    <button class="b-on b-all" id="btnTodasOn">🌞 Encender todas</button>
-    <button class="b-off b-all" id="btnTodasOff">🌙 Apagar todas</button>
-  </div>
-
-  <section class="card" aria-label="Detalles">
-    <details>
-      <summary>🔍 Ver detalles (para curiosos)</summary>
-      <div id="barras"></div>
+    <details class="ajustes">
+      <summary>Ajustes y registro</summary>
+      <div class="ajustes-cuerpo">
+        <div>
+          <label class="campo">
+            <span>Modelo de Teachable Machine (enlace o carpeta local como ./modelo/)</span>
+            <input type="text" id="urlModelo" value="https://teachablemachine.withgoogle.com/models/pSEotngcT/">
+          </label>
+          <div class="campo">
+            <span>Confianza mínima para aceptar una orden</span>
+            <div class="fila"><input type="range" id="umbral" min="50" max="99" value="85" aria-label="Confianza mínima"><b id="umbralTxt">85%</b></div>
+          </div>
+          <label class="fila campo"><input type="checkbox" id="chkVoz" checked><span style="margin:0;color:var(--niebla)">Lumi responde en voz alta</span></label>
+          <div class="campo">
+            <span>Voz de Lumi (en Edge, las «Natural» suenan mejor)</span>
+            <div class="fila"><select id="selVoz" aria-label="Voz de Lumi"></select><button class="btn" id="btnProbarVoz" type="button">Probar</button></div>
+          </div>
+          <div id="barras"></div>
+          <p class="nota">Cada clase debe incluir «encender» o «apagar» y el nombre de la habitación (sala, cocina, cuarto). Las clases de ruido se ignoran. Cuando uses los botones, Lumi no responde: solo contesta a la voz.</p>
+        </div>
+        <div>
+          <div class="campo"><span>Registro</span><div id="log"></div></div>
+        </div>
+      </div>
     </details>
-
-    <p class="tips">
-      💡 <b>Consejo:</b> di la orden completa, por ejemplo «Oye Lumi, encender sala», y espera un segundito antes de la siguiente.
-    </p>
-  </section>
-</main>
+  </main>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@0.4.0/dist/speech-commands.min.js"></script>
-
 <script>
-  // Enlace de tu modelo de Teachable Machine
-  const MODEL_URL = "https://teachablemachine.withgoogle.com/models/pSEotngcT/";
+const $ = id => document.getElementById(id);
+const log = msg => {
+  const d = document.createElement('div');
+  d.textContent = new Date().toLocaleTimeString() + '  ' + msg;
+  $('log').prepend(d);
+};
 
-  // Confianza mínima para aceptar un comando (0 a 1)
-  const UMBRAL = 0.55;
+/* =====================================================
+   HABITACIONES  (letra para encender / apagar en el Arduino)
+   Para agregar una: añade una línea aquí, un pin en el .ino
+   y una clase en Teachable Machine con su nombre.
+   ===================================================== */
+const HABITACIONES = {
+  sala:   { on: 'S', off: 's', pin: 'D4', articulo: 'la sala' },
+  cocina: { on: 'C', off: 'c', pin: 'D5', articulo: 'la cocina' },
+  cuarto: { on: 'Q', off: 'q', pin: 'D6', articulo: 'el cuarto' }
+};
+const estadoLuz = { sala: false, cocina: false, cuarto: false };
 
-  // Lumi recuerda las últimas lecturas (unos 2 segundos) y usa el mejor valor de cada clase
-  const HISTORIAL_MAX = 8;
-  // Diferencia mínima entre la mejor orden y la segunda, para no confundir habitaciones
-  const MARGEN = 0.15;
-  let historial = [];
+function crearPlano() {
+  $('plano').innerHTML = '';
+  Object.keys(HABITACIONES).forEach(h => {
+    const b = document.createElement('button');
+    b.className = 'hab';
+    b.dataset.hab = h;
+    b.setAttribute('aria-pressed', 'false');
+    b.innerHTML =
+      '<span class="lampara" aria-hidden="true"></span>' +
+      '<span class="nombre">' + h + '</span>' +
+      '<span class="estado" id="e-' + h + '">Apagada</span>' +
+      '<span class="pin">LED en ' + HABITACIONES[h].pin + '</span>';
+    b.onclick = () => enviar(!estadoLuz[h], h);   // botón: sin respuesta de Lumi
+    $('plano').appendChild(b);
+  });
+}
+crearPlano();
 
-  // Habitaciones: el "id" debe aparecer en el nombre de la clase (cocina, cuarto, sala)
-  const HABITACIONES = [
-    { id: "cocina", nombre: "Cocina", emoji: "🍳" },
-    { id: "cuarto", nombre: "Cuarto", emoji: "🛏️" },
-    { id: "sala",   nombre: "Sala",   emoji: "🛋️" }
-  ];
+function pintarLuz(hab, on) {
+  const lista = hab === 'todas' ? Object.keys(HABITACIONES) : [hab];
+  lista.forEach(h => {
+    estadoLuz[h] = on;
+    const btn = document.querySelector('.hab[data-hab="' + h + '"]');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    $('e-' + h).textContent = on ? 'Encendida' : 'Apagada';
+  });
+  const n = Object.values(estadoLuz).filter(Boolean).length;
+  document.body.style.setProperty('--amb', n / Object.keys(HABITACIONES).length);
+}
 
-  let recognizer = null;
-  let etiquetas = [];
-  let ultimoComando = 0;
-  const encendida = {};
-  HABITACIONES.forEach(h => encendida[h.id] = false);
+// Anillo de confianza alrededor de Lumi
+function anillo(score) {
+  const s = Math.max(0, Math.min(1, score));
+  $('prog').style.strokeDashoffset = (502.65 * (1 - s)).toFixed(1);
+  $('anillo').classList.toggle('pasa', s >= Number($('umbral').value) / 100);
+}
+function ponerMarca() {
+  $('marca').setAttribute('transform', 'rotate(' + (Number($('umbral').value) * 3.6) + ' 88 88)');
+}
 
-  const burbuja = document.getElementById("burbuja");
-  const msg = document.getElementById("msg");
-  const heard = document.getElementById("heard");
-  const barras = document.getElementById("barras");
-  const btnStart = document.getElementById("btnStart");
-  const btnStop = document.getElementById("btnStop");
+/* =====================================================
+   LUMI: orbe, burbuja y voz
+   ===================================================== */
+let escuchando = false, hablando = false;
 
-  function lumiSVG() {
-    return `
-    <div class="lumi-wrap">
-      <svg viewBox="0 0 240 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lumi, una bombilla sonriente">
-        <g class="glow">
-          <circle cx="120" cy="120" r="115" fill="#ffd23f" opacity=".16"/>
-          <circle cx="120" cy="120" r="92" fill="#ffd23f" opacity=".22"/>
-        </g>
-        <rect x="90" y="190" width="60" height="18" rx="8" fill="#b9b3d3"/>
-        <rect x="95" y="206" width="50" height="16" rx="8" fill="#a29bc4"/>
-        <rect x="102" y="220" width="36" height="14" rx="7" fill="#8f87b6"/>
-        <rect x="70" y="262" width="100" height="20" rx="10" fill="#7a72a3"/>
-        <rect x="112" y="232" width="16" height="34" fill="#8f87b6"/>
-        <circle class="bulb" cx="120" cy="120" r="72"/>
-        <ellipse cx="92" cy="86" rx="14" ry="22" fill="#fff" opacity=".35" transform="rotate(25 92 86)"/>
-        <ellipse cx="82" cy="140" rx="12" ry="8" fill="#ff8fab" opacity=".55"/>
-        <ellipse cx="158" cy="140" rx="12" ry="8" fill="#ff8fab" opacity=".55"/>
-        <g class="face-off">
-          <path d="M84 118 q12 10 24 0" stroke="#4a4270" stroke-width="5" fill="none" stroke-linecap="round"/>
-          <path d="M132 118 q12 10 24 0" stroke="#4a4270" stroke-width="5" fill="none" stroke-linecap="round"/>
-          <ellipse cx="120" cy="148" rx="9" ry="6" fill="#4a4270"/>
-        </g>
-        <g class="face-on">
-          <circle cx="96" cy="114" r="10" fill="#3b3355"/>
-          <circle cx="144" cy="114" r="10" fill="#3b3355"/>
-          <circle cx="99" cy="110" r="3.5" fill="#fff"/>
-          <circle cx="147" cy="110" r="3.5" fill="#fff"/>
-          <path d="M96 140 q24 28 48 0 q-24 8 -48 0z" fill="#3b3355" stroke="#3b3355" stroke-width="4" stroke-linejoin="round"/>
-          <path d="M108 148 q12 10 24 0 q-12 -4 -24 0z" fill="#ff8fab"/>
-        </g>
-        <g class="sparkles" font-size="26">
-          <text x="14" y="70">✨</text>
-          <text x="198" y="60" style="animation-delay:.5s">✨</text>
-          <text x="208" y="150" style="animation-delay:1s">⭐</text>
-          <text x="6" y="150" style="animation-delay:1.3s">⭐</text>
-        </g>
-        <g class="zzz" font-size="30">
-          <text x="182" y="62">z</text>
-          <text x="200" y="40" font-size="22" style="animation-delay:.6s">z</text>
-          <text x="214" y="22" font-size="16" style="animation-delay:1.2s">z</text>
-        </g>
-      </svg>
-    </div>`;
+function ficha(idFicha, idTxt, texto, clase) {
+  $(idFicha).className = 'ficha' + (clase ? ' ' + clase : '');
+  $(idTxt).textContent = texto;
+}
+function setOrbe(estado) { $('orbe').dataset.estado = estado; }
+function orbeEnReposo() { setOrbe(escuchando ? 'escucha' : 'reposo'); }
+function decir(texto) { $('burbuja').textContent = texto; }
+
+let vozLumi = null;
+// Puntaje para elegir sola una voz femenina, cálida y natural (las «Natural» de Edge suenan mucho mejor)
+const VOCES_FEMENINAS = ['salome', 'dalia', 'paloma', 'elena', 'elvira', 'sabina', 'helena', 'laura', 'catalina', 'google español'];
+const VOCES_MASCULINAS = ['gonzalo', 'jorge', 'alvaro', 'pablo', 'raul', 'diego', 'tomas', 'juan', 'pedro', 'carlos', 'enrique', 'alonso', 'arnau'];
+function puntajeVoz(v) {
+  const n = v.name.toLowerCase();
+  let p = 0;
+  if (n.includes('natural')) p += 60;
+  else if (n.includes('online')) p += 30;
+  const f = VOCES_FEMENINAS.findIndex(x => n.includes(x));
+  if (f >= 0) p += 40 - f;
+  if (VOCES_MASCULINAS.some(x => n.includes(x))) p -= 80;
+  if (/^es[-_]CO/i.test(v.lang)) p += 8;
+  else if (/^es[-_](MX|US|419)/i.test(v.lang)) p += 4;
+  return p;
+}
+function listarVoces() {
+  if (!('speechSynthesis' in window)) return;
+  const es = speechSynthesis.getVoices().filter(v => /^es/i.test(v.lang)).sort((a, b) => puntajeVoz(b) - puntajeVoz(a));
+  const sel = $('selVoz');
+  sel.innerHTML = '';
+  if (!es.length) {
+    sel.innerHTML = '<option>Voz por defecto del navegador</option>';
+    vozLumi = null;
+    return;
   }
+  es.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v.name;
+    o.textContent = v.name.replace(/^Microsoft /, '') + ' (' + v.lang + ')';
+    sel.appendChild(o);
+  });
+  let guardada = null;
+  try { guardada = localStorage.getItem('lumiVoz'); } catch (e) {}
+  vozLumi = es.find(v => v.name === guardada) || es[0];
+  sel.value = vozLumi.name;
+}
+function crearEnunciado(texto) {
+  const u = new SpeechSynthesisUtterance(texto);
+  u.lang = vozLumi ? vozLumi.lang : 'es-CO';
+  if (vozLumi) u.voice = vozLumi;
+  u.rate = 0.96;    // un poco más pausada: se siente más amable
+  u.pitch = 1.1;    // algo más suave (las voces «Natural» ignoran este ajuste)
+  return u;
+}
+if ('speechSynthesis' in window) { listarVoces(); speechSynthesis.onvoiceschanged = listarVoces; }
+$('selVoz').onchange = () => {
+  vozLumi = speechSynthesis.getVoices().find(v => v.name === $('selVoz').value) || null;
+  try { localStorage.setItem('lumiVoz', $('selVoz').value); } catch (e) {}
+  probarVoz();
+};
+function probarVoz() {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(crearEnunciado('Hola, soy Lumi. Con mucho gusto cuido las luces de tu casa.'));
+}
+$('btnProbarVoz').onclick = probarVoz;
 
-  function crearHabitaciones() {
-    const casa = document.getElementById("casa");
-    HABITACIONES.forEach(h => {
-      const d = document.createElement("section");
-      d.className = "room";
-      d.id = "room-" + h.id;
-      d.setAttribute("aria-label", "Luz de " + h.nombre);
-      d.innerHTML =
-        `<h2>${h.emoji} ${h.nombre}</h2>` +
-        lumiSVG() +
-        `<p class="rstate">😴 Dormida</p>` +
-        `<div class="row">
-           <button class="b-on" data-act="on" data-id="${h.id}">🌞 Encender</button>
-           <button class="b-off" data-act="off" data-id="${h.id}">🌙 Apagar</button>
-         </div>
-         <div class="slider">
-           <label for="br-${h.id}">🔆 Brillo: <span id="brv-${h.id}">100</span>%</label>
-           <div class="rowb">
-             <span aria-hidden="true">🌥️</span>
-             <input type="range" id="br-${h.id}" data-id="${h.id}" min="10" max="100" value="100">
-             <span aria-hidden="true">☀️</span>
-           </div>
-         </div>`;
-      casa.appendChild(d);
-    });
-
-    casa.querySelectorAll("button[data-act]").forEach(b => {
-      b.onclick = () => fijar(b.dataset.id, b.dataset.act === "on", "boton");
-    });
-    casa.querySelectorAll("input[type=range]").forEach(r => {
-      r.oninput = () => {
-        document.getElementById("brv-" + r.dataset.id).textContent = r.value;
-        pintar(r.dataset.id);
-      };
-    });
+// Lumi muestra su respuesta y, si está activado, la dice en voz alta.
+function responder(texto) {
+  decir(texto);
+  setOrbe('habla');
+  const conVoz = $('chkVoz').checked && ('speechSynthesis' in window);
+  if (!conVoz) {            // sin voz no hay eco: el micrófono sigue atento
+    setTimeout(orbeEnReposo, 1200);
+    return;
   }
+  let seguro;
+  const terminar = () => {
+    clearTimeout(seguro);
+    setTimeout(() => { hablando = false; }, 400);   // margen para que el micrófono no capte el eco
+    orbeEnReposo();
+  };
+  hablando = true;
+  seguro = setTimeout(terminar, Math.max(3000, texto.length * 110)); // por si el navegador no avisa que terminó
+  speechSynthesis.cancel();
+  const u = crearEnunciado(texto);
+  u.onend = terminar; u.onerror = terminar;
+  speechSynthesis.speak(u);
+}
 
-  function pintar(id) {
-    const el = document.getElementById("room-" + id);
-    const on = encendida[id];
-    const nivel = document.getElementById("br-" + id).value / 100;
-    el.classList.toggle("on", on);
-    el.querySelector(".rstate").textContent = on ? "😊 ¡Encendida!" : "😴 Dormida";
-    el.querySelector(".glow").style.opacity = on ? nivel : 0;
-    el.querySelector(".bulb").style.opacity = on ? (0.5 + 0.5 * nivel) : 1;
+const FRASES = {
+  on:  [h => 'Listo, ya encendí ' + h + '.', h => 'Con mucho gusto, encendí ' + h + '.', h => 'Hecho. ' + h.charAt(0).toUpperCase() + h.slice(1) + ' ya tiene luz.'],
+  off: [h => 'Listo, ya apagué ' + h + '.',  h => 'Con mucho gusto, apagué ' + h + '.',  h => 'Hecho, apagué ' + h + '. Que descanses.']
+};
+let ultimaFrase = -1;
+function frase(on, hab) {
+  const nombre = hab === 'todas' ? 'todas las luces' : HABITACIONES[hab].articulo;
+  const lista = FRASES[on ? 'on' : 'off'];
+  let i; do { i = Math.floor(Math.random() * lista.length); } while (i === ultimaFrase && lista.length > 1);
+  ultimaFrase = i;
+  return lista[i](nombre);
+}
+
+/* =====================================================
+   ARDUINO por Web Serial
+   ===================================================== */
+let puerto = null, escritor = null;
+
+async function conectarArduino() {
+  if (!('serial' in navigator)) {
+    alert('Este navegador no soporta Web Serial. Usa Chrome o Edge.');
+    return;
   }
-
-  function nombreHab(id) { return HABITACIONES.find(h => h.id === id).nombre; }
-
-  function fijar(id, encender, origen) {
-    encendida[id] = encender;
-    pintar(id);
-    if (encender) {
-      burbuja.textContent = origen === "voz"
-        ? "¡Listo! Luz de la " + nombreHab(id).toLowerCase() + " encendida 🌞"
-        : "¡Hola, " + nombreHab(id).toLowerCase() + "! 🌞";
-    } else {
-      burbuja.textContent = origen === "voz"
-        ? "Ok, apagué la " + nombreHab(id).toLowerCase() + " 🌙"
-        : "Buenas noches, " + nombreHab(id).toLowerCase() + " 🌙";
-    }
+  try {
+    puerto = await navigator.serial.requestPort();
+    await puerto.open({ baudRate: 9600 });
+    escritor = puerto.writable.getWriter();
+    ficha('fichaArduino', 'txtArduino', 'reiniciando…', 'espera');
+    log('Puerto abierto. Esperando a que el Arduino reinicie (2 s)…');
+    await new Promise(r => setTimeout(r, 2000)); // el Uno se reinicia al abrir el puerto
+    ficha('fichaArduino', 'txtArduino', 'conectado', 'ok');
+    $('btnArduino').textContent = 'Desconectar Arduino';
+    log('Arduino listo.');
+    decir('Arduino conectado. Ya puedo encender las luces de verdad.');
+  } catch (e) {
+    log('No se pudo conectar: ' + e.message);
+    ficha('fichaArduino', 'txtArduino', 'sin conectar', '');
+    puerto = null; escritor = null;
   }
+}
 
-  function fijarTodas(encender) {
-    HABITACIONES.forEach(h => { encendida[h.id] = encender; pintar(h.id); });
-    burbuja.textContent = encender ? "¡Toda la casa iluminada! 🌞" : "¡Toda la casa a dormir! 🌙";
+async function desconectarArduino() {
+  try {
+    if (escritor) escritor.releaseLock();
+    if (puerto) await puerto.close();
+  } catch (e) { log('Error al cerrar: ' + e.message); }
+  puerto = null; escritor = null;
+  ficha('fichaArduino', 'txtArduino', 'sin conectar', '');
+  $('btnArduino').textContent = 'Conectar Arduino';
+  log('Arduino desconectado.');
+}
+
+// Cambia la luz en pantalla y la envía al Arduino. Devuelve true si llegó al Arduino.
+// hab: 'sala' | 'cocina' | 'cuarto' | 'todas'
+async function enviar(on, hab) {
+  pintarLuz(hab, on);
+  const verbo = on ? 'ENCENDER' : 'APAGAR';
+  if (!escritor) { log(verbo + ' ' + hab + ' (solo en pantalla: Arduino no conectado)'); return false; }
+  const caracter = hab === 'todas' ? (on ? '1' : '0') : HABITACIONES[hab][on ? 'on' : 'off'];
+  try {
+    await escritor.write(new TextEncoder().encode(caracter));
+    log(verbo + ' ' + hab + ' → enviado «' + caracter + '»');
+    return true;
+  } catch (e) {
+    log('Error al enviar: ' + e.message);
+    return false;
   }
+}
 
-  document.getElementById("btnTodasOn").onclick = () => fijarTodas(true);
-  document.getElementById("btnTodasOff").onclick = () => fijarTodas(false);
+$('btnArduino').onclick = () => puerto ? desconectarArduino() : conectarArduino();
+$('btnOn').onclick  = () => enviar(true, 'todas');
+$('btnOff').onclick = () => enviar(false, 'todas');
 
-  function crearBarras() {
-    barras.innerHTML = "";
-    etiquetas.forEach((et, i) => {
-      const d = document.createElement("div");
-      d.className = "bar";
-      d.id = "bar" + i;
-      d.innerHTML =
-        '<div class="lbl"><span>' + et + '</span><span class="pct">0%</span></div>' +
-        '<div class="track"><div class="fill"></div></div>';
-      barras.appendChild(d);
-    });
-  }
+/* =====================================================
+   MODELO de Teachable Machine
+   ===================================================== */
+let reconocedor = null, etiquetas = [], accionPorEtiqueta = [];
+const ultimaPorClase = {};   // evita repetir la misma orden mientras dices una sola frase
+const ESPERA_CLASE_MS = 1200;
+let ultimoInforme = 0;
+// Explica en pantalla y en el registro por qué una orden NO se ejecutó
+function informar(texto) {
+  const ahora = Date.now();
+  if (ahora - ultimoInforme < 800) return;
+  ultimoInforme = ahora;
+  $('decision').textContent = texto;
+  log(texto);
+}
 
-  // Lee el nombre de la clase: qué acción (encender/apagar) y qué habitación
-  function interpretar(nombre) {
-    const n = nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    let accion = null;
-    if (n.includes("prend") || n.includes("encend") || n.includes("enciend")) accion = "on";
-    else if (n.includes("apag")) accion = "off";
-    if (!accion) return null;
+function accionDe(etiqueta) {
+  const t = etiqueta.toLowerCase();
+  if (t.includes('ruido') || t.includes('fondo') || t.includes('background')) return null;
+  let on;
+  if (t.includes('apag')) on = false;
+  else if (t.includes('prend') || t.includes('encend') || t.includes('enciend')) on = true;
+  else return null;
+  let hab = 'todas';
+  if (t.includes('sala')) hab = 'sala';
+  else if (t.includes('cocina')) hab = 'cocina';
+  else if (t.includes('cuarto')) hab = 'cuarto';
+  return { on, hab };
+}
 
-    const hab = HABITACIONES.find(h => n.includes(h.id));
-    if (hab) return { accion, hab: hab.id };
-    if (n.includes("tod")) return { accion, hab: "todas" };
-    return null;
-  }
+function crearBarras() {
+  $('barras').innerHTML = '';
+  etiquetas.forEach((et, i) => {
+    const a = accionPorEtiqueta[i];
+    const d = document.createElement('div');
+    d.className = 'barra' + (a ? '' : ' ignorada');
+    d.innerHTML = '<div class="et"><span></span><span id="p' + i + '">0%</span></div>' +
+                  '<div class="fondo"><div class="valor" id="v' + i + '"></div></div>';
+    d.querySelector('span').textContent = et;
+    $('barras').appendChild(d);
+  });
+}
 
-  async function iniciar() {
-    btnStart.disabled = true;
-    msg.textContent = "⏳ Lumi se está despertando...";
+function conTiempo(promesa, ms, mensaje) {
+  return Promise.race([promesa, new Promise((_, rej) => setTimeout(() => rej(new Error(mensaje)), ms))]);
+}
+
+async function elegirUrlDisponible(url) {
+  const candidatas = [url];
+  const m = url.match(/teachablemachine\.withgoogle\.com\/models\/([^\/]+)\//);
+  if (m) candidatas.push('https://storage.googleapis.com/tm-model/' + m[1] + '/');
+  for (const base of candidatas) {
     try {
-      if (!recognizer) {
-        recognizer = speechCommands.create(
-          "BROWSER_FFT", undefined,
-          MODEL_URL + "model.json", MODEL_URL + "metadata.json"
-        );
-        await recognizer.ensureModelLoaded();
-        etiquetas = recognizer.wordLabels();
-        crearBarras();
-      }
-
-      recognizer.listen(result => {
-        const scores = result.scores;
-        let mejor = 0;
-        scores.forEach((s, i) => { if (s > scores[mejor]) mejor = i; });
-
-        scores.forEach((s, i) => {
-          const el = document.getElementById("bar" + i);
-          el.querySelector(".fill").style.width = (s * 100).toFixed(0) + "%";
-          el.querySelector(".pct").textContent = (s * 100).toFixed(0) + "%";
-          el.classList.toggle("top", i === mejor);
-        });
-
-        // La frase dura más que la ventana de 1 segundo del modelo,
-        // así que se toma el mejor valor reciente de cada clase
-        historial.push(Array.from(scores));
-        if (historial.length > HISTORIAL_MAX) historial.shift();
-        const pico = Array.from(scores).map((_, i) => Math.max(...historial.map(h => h[i])));
-
-        const cmds = pico
-          .map((p, i) => ({ p, i }))
-          .filter(c => interpretar(etiquetas[c.i]))
-          .sort((a, b) => b.p - a.p);
-
-        if (cmds.length) {
-          const top = cmds[0];
-          const rival = cmds.length > 1 ? cmds[1].p : 0;
-          const orden = interpretar(etiquetas[top.i]);
-
-          if (top.p > 0.35) {
-            heard.innerHTML = "👂 «" + etiquetas[top.i] + "»" +
-              "<small>" + (top.p * 100).toFixed(0) + "%</small>";
-          }
-
-          const ahora = Date.now();
-          if (top.p >= UMBRAL && top.p - rival >= MARGEN && ahora - ultimoComando > 2000) {
-            ultimoComando = ahora;
-            historial = [];
-            if (orden.hab === "todas") fijarTodas(orden.accion === "on");
-            else fijar(orden.hab, orden.accion === "on", "voz");
-            msg.textContent = "✅ ¡Orden recibida!";
-          }
-        }
-      }, {
-        includeSpectrogram: true,
-        probabilityThreshold: 0.5,
-        invokeCallbackOnNoiseAndUnknown: true,
-        overlapFactor: 0.75
-      });
-
-      btnStart.classList.add("listening");
-      btnStart.textContent = "🎧 Lumi te escucha";
-      btnStop.disabled = false;
-      msg.textContent = "Di, por ejemplo: «Oye Lumi, encender cocina».";
+      const r = await conTiempo(fetch(base + 'metadata.json', { cache: 'no-store' }), 15000, 'sin respuesta en 15 s');
+      if (r.ok) { log('Modelo accesible en ' + base); return base; }
+      log('⚠ ' + base + ' respondió ' + r.status);
     } catch (e) {
-      console.error(e);
-      msg.textContent = "😕 No pude escuchar: " + e.message + ". Revisa el permiso del micrófono y usa Chrome.";
-      btnStart.disabled = false;
+      log('⚠ No pude leer ' + base + 'metadata.json → ' + e.message);
     }
   }
+  log('Intento cargar de todos modos con la URL original…');
+  return url;
+}
 
-  function detener() {
-    if (recognizer && recognizer.isListening()) recognizer.stopListening();
-    btnStart.disabled = false;
-    btnStart.classList.remove("listening");
-    btnStart.textContent = "🎤 Hablar con Lumi";
-    btnStop.disabled = true;
-    msg.textContent = "Lumi dejó de escuchar. Toca «Hablar con Lumi» para seguir.";
+// Se llama solo cuando la orden llega por voz: aquí Lumi responde.
+async function ordenPorVoz(a, etiqueta, confianza) {
+  $('escuche').textContent = 'Escuché: «' + etiqueta + '» (' + confianza + '%)';
+  const llego = await enviar(a.on, a.hab);
+  let texto = frase(a.on, a.hab);
+  if (!llego) texto += ' Lo hice en pantalla, pero el Arduino no está conectado.';
+  responder(texto);
+}
+
+async function cargarYEscuchar() {
+  $('btnEscuchar').disabled = true;
+  try {
+    let url = $('urlModelo').value.trim();
+    if (!url.endsWith('/')) url += '/';
+    ficha('fichaVoz', 'txtVoz', 'cargando…', 'espera');
+    decir('Cargando mi modelo de voz. La primera vez puede tardar un poco.');
+    log('Cargando modelo desde ' + url);
+
+    if (!reconocedor) {
+      if (typeof speechCommands === 'undefined' || typeof tf === 'undefined') {
+        throw new Error('No cargaron las librerías (tfjs / speech-commands). Revisa tu conexión a internet y recarga con Ctrl+F5.');
+      }
+      log('Motor TensorFlow: ' + tf.getBackend());
+      url = await elegirUrlDisponible(url);
+      reconocedor = speechCommands.create('BROWSER_FFT', undefined, url + 'model.json', url + 'metadata.json');
+      const ticker = setInterval(() => log('…sigue cargando el modelo (≈6 MB)'), 8000);
+      try {
+        await conTiempo(reconocedor.ensureModelLoaded(), 90000, 'El modelo tardó más de 90 s en cargar');
+      } finally { clearInterval(ticker); }
+      etiquetas = reconocedor.wordLabels();
+      accionPorEtiqueta = etiquetas.map(accionDe);
+      crearBarras();
+      log('Clases: ' + etiquetas.join(' | '));
+      if (!accionPorEtiqueta.some(a => a && a.on) || !accionPorEtiqueta.some(a => a && !a.on)) {
+        log('⚠ No encontré clases de encender y apagar. Revisa los nombres de las clases.');
+      }
+    }
+
+    await reconocedor.listen(resultado => {
+      const scores = resultado.scores;
+      const umbral = Number($('umbral').value) / 100;
+      let mejor = 0;
+      scores.forEach((s, i) => {
+        $('v' + i).style.width = (s * 100).toFixed(0) + '%';
+        $('p' + i).textContent = (s * 100).toFixed(0) + '%';
+        if (s > scores[mejor]) mejor = i;
+      });
+      anillo(scores.reduce((m, s, i) => accionPorEtiqueta[i] ? Math.max(m, s) : m, 0));
+      const a = accionPorEtiqueta[mejor];
+      if (!a || scores[mejor] < 0.6) return;   // ruido o intento muy flojo: nada que explicar
+      const pct = (scores[mejor] * 100).toFixed(0);
+      const nombre = '«' + etiquetas[mejor] + '» al ' + pct + '%';
+      if (hablando) { informar('Oí ' + nombre + ', pero Lumi estaba hablando.'); return; }
+      if (scores[mejor] < umbral) { informar('Oí ' + nombre + ': menos que tu mínimo de ' + $('umbral').value + '%.'); return; }
+      const ahora = Date.now();
+      if (ahora - (ultimaPorClase[mejor] || 0) < ESPERA_CLASE_MS) return;   // misma frase, ya atendida
+      ultimaPorClase[mejor] = ahora;
+      $('decision').textContent = '';
+      log('Oí ' + nombre);
+      ordenPorVoz(a, etiquetas[mejor], pct);
+    }, {
+      includeSpectrogram: false,
+      probabilityThreshold: 0.5,
+      invokeCallbackOnNoiseAndUnknown: true,
+      overlapFactor: 0.5
+    });
+
+    escuchando = true;
+    orbeEnReposo();
+    ficha('fichaVoz', 'txtVoz', 'escuchando', 'ok');
+    $('btnEscuchar').textContent = 'Pausar a Lumi';
+    decir('Te escucho. Dime, por ejemplo: «Oye Lumi, encender cocina».');
+  } catch (e) {
+    log('Error con el modelo: ' + e.message);
+    ficha('fichaVoz', 'txtVoz', 'error', '');
+    decir('No pude cargar mi modelo de voz. Abre «Ajustes y registro» para ver qué pasó.');
+    reconocedor = null;
+  } finally {
+    $('btnEscuchar').disabled = false;
   }
+}
 
-  btnStart.onclick = iniciar;
-  btnStop.onclick = detener;
+async function pararEscucha() {
+  try { if (reconocedor && reconocedor.isListening()) await reconocedor.stopListening(); } catch (e) { log('Error al pausar: ' + e.message); }
+  escuchando = false;
+  anillo(0);
+  orbeEnReposo();
+  ficha('fichaVoz', 'txtVoz', 'en pausa', 'espera');
+  $('btnEscuchar').textContent = 'Activar a Lumi';
+  decir('Me quedo en pausa. Pulsa «Activar a Lumi» cuando quieras hablarme.');
+  log('Escucha detenida.');
+}
 
-  crearHabitaciones();
-  HABITACIONES.forEach(h => pintar(h.id));
+$('btnEscuchar').onclick = () => escuchando ? pararEscucha() : cargarYEscuchar();
+$('umbral').oninput = () => { $('umbralTxt').textContent = $('umbral').value + '%'; ponerMarca(); };
+ponerMarca();
+
+if (!('serial' in navigator)) {
+  log('⚠ Este navegador no tiene Web Serial. Abre la página en Chrome o Edge.');
+}
 </script>
 </body>
 </html>
