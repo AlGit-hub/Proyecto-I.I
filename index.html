@@ -212,6 +212,80 @@
     .orbe, .orbe[data-estado] { animation: none !important; }
     * { transition-duration: .01ms !important; }
   }
+
+  /* ---------- Vidrio líquido (botones, fichas, dock) ---------- */
+  :root {
+    --vidrio: linear-gradient(160deg, rgba(255,255,255,.14), rgba(255,255,255,.04) 55%, rgba(255,255,255,.08));
+    --borde-vidrio: rgba(255,255,255,.20);
+    --brillo: inset 0 1px 0 rgba(255,255,255,.38), inset 0 -1px 0 rgba(255,255,255,.05), 0 8px 22px rgba(3,6,20,.38);
+  }
+  .btn, .modo, .ficha {
+    position: relative; isolation: isolate; overflow: hidden;
+    background: var(--vidrio), rgba(22,31,66,.45);
+    border-color: var(--borde-vidrio);
+    -webkit-backdrop-filter: blur(14px) saturate(1.7); backdrop-filter: blur(14px) saturate(1.7);
+    box-shadow: var(--brillo);
+  }
+  .btn::before, .modo::before {   /* destello superior, como luz sobre el vidrio */
+    content: ""; position: absolute; inset: 0 0 52% 0; z-index: -1; pointer-events: none;
+    background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0));
+    border-radius: inherit;
+  }
+  .btn:hover:not(:disabled), .modo:hover:not(:disabled) { background: var(--vidrio), rgba(60,80,160,.45); }
+  .btn.principal, .controles .btn.principal {
+    background: linear-gradient(165deg, rgba(255,226,150,.95), rgba(255,184,70,.82)), var(--luz);
+    border-color: rgba(255,240,200,.65); color: #20142A;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 6px rgba(200,110,0,.25), 0 8px 24px rgba(255,170,50,.28);
+  }
+  .btn.principal:hover:not(:disabled) { background: linear-gradient(165deg, rgba(255,236,176,1), rgba(255,196,95,.92)), var(--luz); }
+  .btn.arduino[aria-pressed="true"], .controles .btn.arduino[aria-pressed="true"] {
+    background: linear-gradient(165deg, rgba(160,255,215,.95), rgba(80,214,160,.85)), var(--ok);
+    border-color: rgba(220,255,240,.7); color: #08241A;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 8px 24px rgba(80,220,170,.25);
+  }
+  .controles .btn.escucha[aria-pressed="true"] { background: linear-gradient(165deg, rgba(255,226,150,.95), rgba(255,184,70,.82)), var(--luz); color: #20142A; }
+  .modo[aria-pressed="true"], .modo[aria-pressed="true"]:hover:not(:disabled) {
+    background: linear-gradient(165deg, rgba(255,226,150,.95), rgba(255,184,70,.82)), var(--luz);
+    border-color: rgba(255,240,200,.65); color: #20142A;
+  }
+  .burbuja { background: var(--vidrio), rgba(22,31,66,.55); border-color: var(--borde-vidrio); box-shadow: var(--brillo);
+    -webkit-backdrop-filter: blur(14px) saturate(1.5); backdrop-filter: blur(14px) saturate(1.5); }
+  details.ajustes { border-color: var(--borde-vidrio); box-shadow: var(--brillo); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+
+  @media (max-width: 860px) {
+    /* Más compacto: que el plano completo (sala, cocina y cuarto) quepa en pantalla */
+    .pagina { padding-top: 10px; }
+    .marca h1 { font-size: 1.6rem; }
+    .marca p { display: none; }
+    .cabecera { margin-bottom: 8px; }
+    .escena { gap: 12px; }
+    .lumi { gap: 8px 12px; }
+    .lumi .orbe-caja { width: 84px; }
+    .lumi .burbuja { font-size: .98rem; padding: 10px 12px; flex: 1 1 150px; }
+    .lumi .ejemplo { display: none; }
+    .lumi .modos-caja > span { display: none; }
+    .modo { padding: 6px 11px; font-size: .8rem; }
+    .plano { min-height: 0; height: clamp(250px, 40svh, 360px); }
+    .lampara { top: 28%; width: 34px; height: 34px; }
+    .hab { padding: 10px 12px; }
+    .hab .nombre { font-size: 1.15rem; }
+    .hab .estado, .hab .pin { font-size: .78rem; }
+    .pagina { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
+
+    /* Dock flotante de vidrio */
+    .controles {
+      left: 10px; right: 10px; bottom: calc(8px + env(safe-area-inset-bottom));
+      padding: 7px; border: 1px solid var(--borde-vidrio); border-radius: 26px;
+      background: linear-gradient(160deg, rgba(255,255,255,.16), rgba(255,255,255,.04)), rgba(14,21,48,.5);
+      -webkit-backdrop-filter: blur(22px) saturate(1.8); backdrop-filter: blur(22px) saturate(1.8);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 14px 40px rgba(0,0,0,.5);
+    }
+    .controles .btn { border-radius: 19px; padding: 8px 2px; font-size: .7rem; }
+    .controles .btn .ico { width: 21px; height: 21px; }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .btn, .modo, .ficha, .burbuja, details.ajustes, .controles { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; background-color: #161F42; }
+  }
 .btn[hidden]{display:none}
 </style>
 </head>
