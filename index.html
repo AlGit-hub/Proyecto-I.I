@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lumi · Luz de casa por voz</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%20%3Cdefs%3E%20%3CradialGradient%20id%3D%22o%22%20cx%3D%2235%25%22%20cy%3D%2230%25%22%20r%3D%2280%25%22%3E%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFF4D6%22%2F%3E%20%3Cstop%20offset%3D%22.45%22%20stop-color%3D%22%23FFC857%22%2F%3E%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FF9F43%22%2F%3E%20%3C%2FradialGradient%3E%20%3CradialGradient%20id%3D%22h%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%20%3Cstop%20offset%3D%22.55%22%20stop-color%3D%22%23FFC857%22%20stop-opacity%3D%22.35%22%2F%3E%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FFC857%22%20stop-opacity%3D%220%22%2F%3E%20%3C%2FradialGradient%3E%20%3C%2Fdefs%3E%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230E1530%22%2F%3E%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2230%22%20fill%3D%22url(%23h)%22%2F%3E%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2219%22%20fill%3D%22url(%23o)%22%2F%3E%20%3C%2Fsvg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0E1530">
+<meta name="mobile-web-app-capable" content="yes">
 <style>
   /* Tipografía local (funciona sin internet) */
   @font-face {
@@ -829,9 +833,35 @@ async function abrirMicVosk() {
   reconVosk.on('error', m => log('Vosk: ' + m.error));
   fuenteVosk = ctxVosk.createMediaStreamSource(streamVosk);
   nodoVosk = ctxVosk.createScriptProcessor(4096, 1, 1);
+  // Mientras Lumi habla NO le damos su voz al reconocedor, pero sí silencio: así cierra la frase que
+  // estaba oyendo. Si no, esa frase queda «abierta» y, al volver el micrófono, se resuelve de nuevo
+  // como una orden repetida (era la causa del bucle).
+  const silencio = ctxVosk.createBuffer(1, 4096, ctxVosk.sampleRate);
+  // Diagnóstico (sobre todo para celulares): estado del audio y nivel del micrófono
+  log('Audio: ' + ctxVosk.state + ' a ' + ctxVosk.sampleRate + ' Hz');
+  ctxVosk.onstatechange = () => { log('Audio cambió a: ' + (ctxVosk && ctxVosk.state)); };
+  const reanudar = () => { if (ctxVosk && ctxVosk.state !== 'running') ctxVosk.resume().catch(() => {}); };
+  document.addEventListener('pointerdown', reanudar);
+  nodoVosk._reanudar = reanudar;
+  let maxNivel = 0, ultimoNivelT = 0, revisado = false, t0 = Date.now(), nBloques = 0;
   nodoVosk.onaudioprocess = ev => {
-    if (estaSordo()) return;     // evita que Lumi se escuche a sí misma
-    try { reconVosk.acceptWaveform(ev.inputBuffer); } catch (e) {}
+    nBloques++;
+    const d = ev.inputBuffer.getChannelData(0);
+    let sum = 0; for (let i = 0; i < d.length; i += 8) sum += d[i] * d[i];
+    const rms = Math.sqrt(sum / (d.length / 8));
+    if (rms > maxNivel) maxNivel = rms;
+    const ahora = Date.now();
+    if (!revisado && ahora - t0 > 4000) {
+      revisado = true;
+      log('Micrófono: ' + nBloques + ' bloques de audio, nivel máximo ' + (maxNivel * 100).toFixed(1) + '%.');
+      if (maxNivel < 0.002) log('⚠ El micrófono no está entregando sonido. Revisa el permiso del sitio y que otra app no lo esté usando.');
+    }
+    if (ahora - t0 < 8000 && ahora - ultimoNivelT > 250 && !parcialVosk && !estaSordo()) {
+      ultimoNivelT = ahora;
+      const n = Math.min(8, Math.round(rms * 40));
+      $('escuche').textContent = 'Micrófono: ' + '▮'.repeat(n) + '▯'.repeat(8 - n);
+    }
+    try { reconVosk.acceptWaveform(estaSordo() ? silencio : ev.inputBuffer); } catch (e) {}
   };
   fuenteVosk.connect(nodoVosk);
   nodoVosk.connect(ctxVosk.destination);
@@ -864,7 +894,7 @@ async function iniciarVosk() {
   await abrirMicVosk();
 }
 async function pararVosk() {
-  try { if (nodoVosk) { nodoVosk.onaudioprocess = null; nodoVosk.disconnect(); } } catch (e) {}
+  try { if (nodoVosk) { document.removeEventListener('pointerdown', nodoVosk._reanudar); nodoVosk.onaudioprocess = null; nodoVosk.disconnect(); } } catch (e) {}
   try { if (fuenteVosk) fuenteVosk.disconnect(); } catch (e) {}
   try { if (streamVosk) streamVosk.getTracks().forEach(t => t.stop()); } catch (e) {}
   try { if (reconVosk) reconVosk.remove(); } catch (e) {}
@@ -1164,6 +1194,10 @@ $('chkWake').onchange = () => { if (modo === 'vosk') reiniciarSiEscucha(); };
 $('chkLumi').onchange = () => { if (modo === 'vosk') reiniciarSiEscucha(); };
 $('selIdioma').onchange = () => { if (modo === 'web') reiniciarSiEscucha(); };
 
+// Instalable como app y disponible sin internet después de la primera visita (solo con https o localhost)
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  navigator.serviceWorker.register('sw.js').catch(e => log('No se pudo preparar el modo sin conexión: ' + e.message));
+}
 pintarModo();
 if (location.protocol === 'file:') {
   $('aviso').hidden = false;

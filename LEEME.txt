@@ -45,6 +45,14 @@ PASO 1B · PUBLICARLA EN INTERNET (Netlify / GitHub Pages) Y USARLA DESDE EL CEL
   * Computador: «Conectar Arduino» (USB) o «Conectar Bluetooth».
   * El modo Vosk en celular no está probado; si va lento, usa el modo Navegador.
 
+INSTALAR LUMI COMO APP (después de publicarla en https)
+  * Android (Chrome): menú ⋮ > «Instalar app» (o «Añadir a pantalla principal»).
+    Queda un icono de Lumi y se abre sin barra del navegador.
+  * Computador (Chrome/Edge): icono de instalar en la barra de direcciones.
+  * Después de abrirla una vez con internet, la página y sus librerías quedan
+    guardadas y abre sin conexión. Cuando subas cambios, abre la app con
+    internet una vez para que se actualice.
+
 PASO 2 · EL MODELO DE VOZ DE VOSK (una sola vez; esto sí necesita internet)
   El modelo no viene incluido porque pesa unos 40 MB.
 
