@@ -1,1 +1,0 @@
-Opcional: pon aqui model.json, metadata.json y weights.bin de Teachable Machine (mira el paso 3 del LEEME.txt).
