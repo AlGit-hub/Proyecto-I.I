@@ -1,0 +1,114 @@
+LUMI · luz de casa por voz (versión sin internet)
+==================================================
+
+QUÉ HAY EN ESTA CARPETA
+  index.html            La página de Lumi (un solo archivo).
+  lib/                  Librerías guardadas aquí para no depender de internet
+                        (Vosk, TensorFlow y speech-commands).
+  fonts/                La tipografía de Lumi.
+  modelo-vosk/          AQUÍ va el modelo de voz de Vosk (paso 2).
+  modelo/               AQUÍ va el modelo de Teachable Machine, si quieres
+                        usarlo sin internet (paso 3, opcional).
+  arduino/              El sketch Lumi_Arduino.ino (USB y Bluetooth HM-10).
+
+LOS TRES MODOS DE VOZ (se cambian en la página, bajo la burbuja de Lumi)
+  Sin internet (Vosk)       Reconoce la voz dentro de tu computador. Necesita
+                            el modelo de Vosk (paso 2). Es el modo pensado
+                            para el proyecto.
+  Teachable Machine         Tu modelo entrenado. Sin internet necesita el
+                            modelo en la carpeta modelo/ (paso 3).
+  Navegador (con internet)  Usa el reconocimiento de Chrome o Edge, que manda
+                            el audio a la nube. Solo sirve con internet.
+
+
+PASO 1 · ABRIR LA PÁGINA CON LIVE SERVER (obligatorio para Vosk)
+  Vosk y el modelo local de Teachable Machine cargan archivos, y el navegador
+  no lo permite si abres el index.html con doble clic. Hay que abrirlo desde
+  un servidor local, y en VS Code es muy fácil:
+
+  1. En VS Code instala la extensión «Live Server» (de Ritwick Dey).
+     Esto sí necesita internet, pero se hace una sola vez.
+  2. Menú Archivo > Abrir carpeta... y elige esta carpeta (Lumi).
+  3. Clic derecho sobre index.html > «Open with Live Server».
+  4. Se abre en el navegador (dirección parecida a http://127.0.0.1:5500).
+     Usa Chrome o Edge: son los que permiten el Arduino por USB.
+  5. La primera vez el navegador pide permiso para el micrófono: acéptalo.
+
+
+PASO 1B · PUBLICARLA EN INTERNET (Netlify / GitHub Pages) Y USARLA DESDE EL CELULAR
+  Live Server solo sirve para abrir la página en tu computador. Netlify o
+  GitHub Pages hacen el mismo trabajo (la dan por https), así que NO hace
+  falta Live Server. Sube la carpeta COMPLETA: index.html, lib/, fonts/ y
+  modelo-vosk/modelo-es.tar.gz (unos 40 MB).
+  * Celular: usa Chrome en ANDROID y pulsa «Conectar Bluetooth» (módulo HM-10).
+    En iPhone no funciona (Safari no tiene Web Bluetooth).
+  * Computador: «Conectar Arduino» (USB) o «Conectar Bluetooth».
+  * El modo Vosk en celular no está probado; si va lento, usa el modo Navegador.
+
+PASO 2 · EL MODELO DE VOZ DE VOSK (una sola vez; esto sí necesita internet)
+  El modelo no viene incluido porque pesa unos 40 MB.
+
+  1. Entra a https://alphacephei.com/vosk/models y descarga el modelo
+     pequeño en español: «vosk-model-small-es-...» (unos 39 MB, archivo .zip).
+  2. Conviértelo al formato que necesita la página. En Windows, abre
+     PowerShell en la carpeta donde lo descargaste y escribe (cambia el
+     nombre si tu versión es distinta):
+
+        tar -xf vosk-model-small-es-0.42.zip
+        tar -czf modelo-es.tar.gz vosk-model-small-es-0.42
+
+     La primera línea descomprime y la segunda crea el archivo modelo-es.tar.gz.
+     Importante: la carpeta que empaquetas debe ser la que tiene adentro
+     las carpetas am, conf y graph. Si al descomprimir queda una carpeta
+     dentro de otra con el mismo nombre, empaqueta la de adentro.
+  3. Copia modelo-es.tar.gz dentro de la carpeta  modelo-vosk/  de Lumi.
+     (Si le pones otro nombre, escríbelo en Ajustes y registro > Modelo de Vosk.)
+
+  Cómo funciona la primera vez: Lumi tarda en cargar el modelo (decenas de
+  segundos). Después el navegador lo guarda y las siguientes veces carga rápido.
+  Si borras los datos del navegador, la próxima vez vuelve a tardar.
+
+
+PASO 3 · MODELO DE TEACHABLE MACHINE SIN INTERNET (opcional)
+  1. En Teachable Machine abre tu proyecto de audio > Exportar modelo >
+     pestaña «Tensorflow.js» > «Descargar mi modelo».
+  2. Descomprime el .zip: salen model.json, metadata.json y weights.bin.
+  3. Copia esos tres archivos dentro de la carpeta  modelo/  de Lumi.
+  Si la carpeta modelo/ está vacía y hay internet, Lumi usa el modelo en
+  línea (LfL5sSgUa) como respaldo.
+
+
+CÓMO USARLO
+  1. Pulsa «Conectar Arduino» y elige el puerto (por USB).
+  2. Elige el modo de voz y pulsa «Activar a Lumi».
+  3. Di, por ejemplo: «Oye Lumi, enciende la cocina», «Oye, apaga la sala»,
+     «Oye Lumi, apaga todo».
+
+  Consejos para el modo Vosk
+  * Con «Usar lista cerrada de frases» activado, Lumi solo busca esas órdenes
+    y reacciona casi al terminar de decirlas. Si quieres que entienda frases
+    libres, desactívalo (será menos exacto).
+  * La palabra «Lumi» puede no estar en el vocabulario del modelo pequeño.
+    Por eso en este modo toda orden debe empezar con «Oye» (que el modelo sí
+    conoce). Así Lumi no confunde su propia voz con una orden (se acabó el
+    bucle). Si «lumi» está en graph/words.txt del modelo, marca esa casilla.
+  * Si hay muchos errores o activaciones por error, sube la «Confianza mínima».
+    Si no responde, bájala. El anillo alrededor de Lumi muestra qué tan segura
+    está; la marca blanca es tu mínimo.
+  * Todo lo que Lumi oye queda en «Ajustes y registro > Registro».
+
+  Voz de Lumi sin internet
+  * Sin internet solo suenan las voces instaladas en tu computador. Las voces
+    «Natural» de Edge necesitan internet; la lista las marca como
+    «requiere internet» y Lumi evita elegirlas cuando no hay conexión.
+
+
+SI ALGO FALLA
+  «No encontré el modelo de Vosk...»     Falta el archivo de modelo-vosk/ o
+      tiene otro nombre, o abriste la página sin Live Server.
+  «No pude cargar el modelo de Vosk...»  El .tar.gz no se creó bien. Repite
+      el paso 2 y revisa que empaquetaste la carpeta que contiene am, conf y graph.
+  «Necesito permiso para el micrófono»   Haz clic en el candado de la barra de
+      direcciones y permite el micrófono.
+  Aviso naranja arriba de la página      Abriste el archivo con doble clic.
+      Usa Live Server (paso 1).

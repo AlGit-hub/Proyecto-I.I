@@ -1,7 +1,8 @@
 /*
   Lumi - 3 habitaciones (sala, cocina, cuarto) controladas desde la página web
+  Las órdenes llegan por USB (Web Serial) o por Bluetooth BLE (módulo HM-10).
 
-  Protocolo por USB (9600 baudios), un carácter por orden:
+  Protocolo (9600 baudios), un carácter por orden:
     'S' / 's' -> sala    encender / apagar
     'C' / 'c' -> cocina  encender / apagar
     'Q' / 'q' -> cuarto  encender / apagar
@@ -13,13 +14,27 @@
     D6 -> resistencia -> LED del CUARTO   -> GND
     D13 -> LED integrado: se enciende si hay alguna habitación encendida
 
+  Módulo HM-10 (Bluetooth BLE):
+    VCC  -> 5V
+    GND  -> GND
+    TXD  -> D2 (directo)
+    RXD  <- D3, pasando por un divisor de voltaje:
+            D3 -> 1 kOhm -> RXD del HM-10 -> 2 kOhm -> GND
+    Los pines 0 y 1 quedan libres para el USB.
+
   RELÉ (opcional, segunda etapa): sigue el estado de la SALA.
-  Está DESHABILITADO. Antes de activarlo revisa el módulo (ver instrucciones):
+  Está DESHABILITADO. Antes de activarlo revisa el módulo:
     - módulo: VCC -> 5V, GND -> GND, IN -> D7
     - si el módulo se activa con nivel BAJO, deja RELE_ACTIVO_EN_ALTO = false
   Úsalo solo con carga de bajo voltaje (LED de 5V/12V, tira LED, etc.)
   No conectes lámparas de la red eléctrica sin supervisión de un adulto con experiencia.
 */
+
+#include <SoftwareSerial.h>
+
+const int PIN_BT_RX = 2;  // el Arduino recibe aquí (va al TXD del HM-10)
+const int PIN_BT_TX = 3;  // el Arduino envía aquí (va al RXD del HM-10, con divisor)
+SoftwareSerial bluetooth(PIN_BT_RX, PIN_BT_TX);
 
 const int PIN_SALA = 4;
 const int PIN_COCINA = 5;
@@ -51,6 +66,22 @@ void aplicar() {
   Serial.print(" cuarto="); Serial.println(cuarto);
 }
 
+// Interpreta un carácter. Devuelve true si era una orden válida.
+bool procesar(char c) {
+  switch (c) {
+    case 'S': sala = true;  break;
+    case 's': sala = false; break;
+    case 'C': cocina = true;  break;
+    case 'c': cocina = false; break;
+    case 'Q': cuarto = true;  break;
+    case 'q': cuarto = false; break;
+    case '1': sala = cocina = cuarto = true;  break;
+    case '0': sala = cocina = cuarto = false; break;
+    default: return false;  // cualquier otro carácter (saltos de línea, etc.) se ignora
+  }
+  return true;
+}
+
 void setup() {
   pinMode(PIN_SALA, OUTPUT);
   pinMode(PIN_COCINA, OUTPUT);
@@ -64,24 +95,20 @@ void setup() {
     escribirRele(false);
   }
 
-  Serial.begin(9600);
+  Serial.begin(9600);     // USB
+  bluetooth.begin(9600);  // HM-10 (viene de fábrica a 9600)
   aplicar();  // todo apagado al arrancar
 }
 
 void loop() {
-  if (Serial.available() > 0) {
-    char c = Serial.read();
-    switch (c) {
-      case 'S': sala = true;  break;
-      case 's': sala = false; break;
-      case 'C': cocina = true;  break;
-      case 'c': cocina = false; break;
-      case 'Q': cuarto = true;  break;
-      case 'q': cuarto = false; break;
-      case '1': sala = cocina = cuarto = true;  break;
-      case '0': sala = cocina = cuarto = false; break;
-      default: return;  // cualquier otro carácter se ignora
-    }
-    aplicar();
+  bool cambio = false;
+
+  while (Serial.available() > 0) {     // órdenes por USB
+    if (procesar(Serial.read())) cambio = true;
   }
+  while (bluetooth.available() > 0) {  // órdenes por Bluetooth
+    if (procesar(bluetooth.read())) cambio = true;
+  }
+
+  if (cambio) aplicar();
 }

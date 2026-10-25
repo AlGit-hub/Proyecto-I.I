@@ -5,10 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lumi · Luz de casa por voz</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%20%3Cdefs%3E%20%3CradialGradient%20id%3D%22o%22%20cx%3D%2235%25%22%20cy%3D%2230%25%22%20r%3D%2280%25%22%3E%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFF4D6%22%2F%3E%20%3Cstop%20offset%3D%22.45%22%20stop-color%3D%22%23FFC857%22%2F%3E%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FF9F43%22%2F%3E%20%3C%2FradialGradient%3E%20%3CradialGradient%20id%3D%22h%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%20%3Cstop%20offset%3D%22.55%22%20stop-color%3D%22%23FFC857%22%20stop-opacity%3D%22.35%22%2F%3E%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FFC857%22%20stop-opacity%3D%220%22%2F%3E%20%3C%2FradialGradient%3E%20%3C%2Fdefs%3E%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230E1530%22%2F%3E%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2230%22%20fill%3D%22url(%23h)%22%2F%3E%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2219%22%20fill%3D%22url(%23o)%22%2F%3E%20%3C%2Fsvg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
 <style>
+  /* Tipografía local (funciona sin internet) */
+  @font-face {
+    font-family: "Bricolage Grotesque Variable";
+    font-style: normal; font-display: swap; font-weight: 200 800;
+    src: url("fonts/bricolage-grotesque-latin.woff2") format("woff2-variations"), url("fonts/bricolage-grotesque-latin.woff2") format("woff2");
+  }
   :root {
     --noche:  #0E1530;
     --noche2: #161F42;
@@ -19,9 +22,10 @@
     --luz2:   #FF9F43;
     --ok:     #6EE7B7;
     --err:    #FF8F8F;
-    --fuente: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --fuente: "Bricolage Grotesque Variable", "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html { color-scheme: dark; }
   /* La página entera se ilumina con cada luz encendida (0 a 1) */
   @property --amb { syntax: "<number>"; inherits: true; initial-value: 0; }
@@ -35,7 +39,7 @@
       radial-gradient(900px 500px at 15% -10%, rgba(255,200,87, calc(.08 + var(--amb) * .06)), transparent 60%),
       var(--noche);
   }
-  button, input, summary { font: inherit; color: inherit; }
+  button, input, summary, select { font: inherit; color: inherit; }
   :focus-visible { outline: 3px solid var(--luz); outline-offset: 3px; }
 
   .pagina { max-width: 1120px; margin: 0 auto; padding: 24px 20px 48px; }
@@ -51,6 +55,8 @@
   .ficha.ok i { background: var(--ok); }
   .ficha.espera i { background: var(--luz); }
 
+  .aviso { margin: -10px 0 22px; padding: 12px 16px; border: 1px solid var(--luz2); border-radius: 14px; background: rgba(255,159,67,.1); color: var(--niebla); font-size: .9rem; line-height: 1.45; }
+
   /* ---------- Escena principal ---------- */
   .escena { display: grid; grid-template-columns: minmax(280px, 360px) 1fr; gap: 32px; align-items: start; }
 
@@ -60,7 +66,7 @@
   .orbe-caja .orbe { width: 73%; height: 73%; }
   .anillo { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
   .anillo .pista { fill: none; stroke: var(--muro); stroke-width: 5; opacity: .55; }
-  .anillo .prog { fill: none; stroke: var(--luz); stroke-width: 5; stroke-dasharray: 502.65; stroke-dashoffset: 502.65; transition: stroke-dashoffset .12s linear, stroke .2s; }
+  .anillo .prog { fill: none; stroke: var(--luz); stroke-width: 5; stroke-dasharray: 502.65; stroke-dashoffset: 502.65; transition: stroke-dashoffset .15s linear, stroke .2s; }
   .anillo.pasa .prog { stroke: var(--ok); }
   .anillo .marca { stroke: var(--niebla); stroke-width: 3; stroke-linecap: round; }
   .orbe {
@@ -85,6 +91,15 @@
   .decision { margin: -10px 0 0; min-height: 1.3em; color: var(--luz); font-size: .9rem; }
   .ejemplo { margin: 0; color: var(--tenue); font-size: .92rem; line-height: 1.5; }
   .ejemplo q { color: var(--niebla); quotes: "«" "»"; }
+
+  /* Selector del modo de voz */
+  .modos-caja { display: flex; flex-direction: column; gap: 6px; }
+  .modos-caja > span { color: var(--tenue); font-size: .8rem; }
+  .modos { display: flex; flex-wrap: wrap; gap: 6px; }
+  .modo { padding: 7px 12px; border-radius: 99px; border: 1px solid var(--muro); background: var(--noche2); cursor: pointer; font-size: .84rem; font-weight: 600; transition: background .2s; }
+  .modo:hover:not(:disabled) { background: #1E2A57; }
+  .modo:disabled { opacity: .5; cursor: not-allowed; }
+  .modo[aria-pressed="true"], .modo[aria-pressed="true"]:hover:not(:disabled) { background: var(--luz); border-color: var(--luz); color: #1A1330; }
 
   /* ---------- Plano de la casa ---------- */
   .plano {
@@ -143,7 +158,8 @@
   input[type=text], select { width: 100%; padding: 9px 11px; border-radius: 10px; border: 1px solid var(--muro); background: #0A1028; }
   .fila { display: flex; align-items: center; gap: 10px; }
   .fila input[type=range] { flex: 1; accent-color: var(--luz); }
-  input[type=checkbox] { accent-color: var(--luz); width: 18px; height: 18px; }
+  input[type=checkbox] { accent-color: var(--luz); width: 18px; height: 18px; flex: none; }
+  .fila.campo > span.txt-check { margin: 0; color: var(--niebla); }
   .barra { margin: 6px 0; }
   .barra .et { display: flex; justify-content: space-between; gap: 10px; font-size: .82rem; margin-bottom: 3px; }
   .barra .fondo { height: 7px; background: #0A1028; border-radius: 6px; overflow: hidden; }
@@ -163,7 +179,7 @@
     .lumi { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
     .lumi .orbe-caja { width: 108px; }
     .lumi .burbuja { flex: 1 1 200px; min-height: 0; padding: 12px 14px; font-size: 1.05rem; }
-    .lumi .escuche, .lumi .decision, .lumi .ejemplo { flex-basis: 100%; margin: 0; min-height: 0; font-size: .85rem; }
+    .lumi .escuche, .lumi .decision, .lumi .ejemplo, .lumi .modos-caja { flex-basis: 100%; margin: 0; min-height: 0; font-size: .85rem; }
     .lumi .escuche:empty, .lumi .decision:empty { display: none; }
 
     /* Dock: los controles siempre al alcance del pulgar */
@@ -192,6 +208,7 @@
     .orbe, .orbe[data-estado] { animation: none !important; }
     * { transition-duration: .01ms !important; }
   }
+.btn[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -208,6 +225,11 @@
     </div>
   </header>
 
+  <p class="aviso" id="aviso" hidden>
+    Abriste la página como archivo suelto. Los modos <b>Vosk</b> y <b>Teachable Machine con modelo local</b> necesitan abrirla desde un servidor local:
+    en VS Code, clic derecho sobre <code>index.html</code> → <b>Open with Live Server</b>. El modo «Navegador» sí funciona así.
+  </p>
+
   <main>
     <div class="escena">
       <section class="lumi" aria-label="Lumi">
@@ -215,14 +237,22 @@
           <svg class="anillo" id="anillo" viewBox="0 0 176 176">
             <circle class="pista" cx="88" cy="88" r="80"/>
             <circle class="prog" id="prog" cx="88" cy="88" r="80" transform="rotate(-90 88 88)"/>
-            <g id="marca" transform="rotate(306 88 88)"><line class="marca" x1="88" y1="1" x2="88" y2="14"/></g>
+            <g id="marca" transform="rotate(252 88 88)"><line class="marca" x1="88" y1="1" x2="88" y2="14"/></g>
           </svg>
           <div class="orbe" id="orbe" data-estado="reposo"></div>
         </div>
         <p class="burbuja" id="burbuja" aria-live="polite">Hola, soy Lumi. Conecta el Arduino, actívame y dime qué luz quieres.</p>
         <p class="escuche" id="escuche"></p>
         <p class="decision" id="decision" aria-live="polite"></p>
-        <p class="ejemplo">Prueba con <q>Oye Lumi, enciende la cocina</q>, <q>Oye Lumi, apaga la sala</q> o <q>Oye Lumi, apaga todo</q>. El anillo muestra qué tan segura estoy de lo que oí; la marca blanca es tu mínimo.</p>
+        <div class="modos-caja">
+          <span id="etModos">Cómo me escuchas</span>
+          <div class="modos" role="group" aria-labelledby="etModos">
+            <button class="modo" type="button" data-modo="vosk" aria-pressed="true">Sin internet (Vosk)</button>
+            <button class="modo" type="button" data-modo="tm" aria-pressed="false">Teachable Machine</button>
+            <button class="modo" type="button" data-modo="web" aria-pressed="false">Navegador (con internet)</button>
+          </div>
+        </div>
+        <p class="ejemplo" id="ejemplo"></p>
       </section>
 
       <section aria-label="Plano de la casa">
@@ -232,6 +262,7 @@
 
     <div class="controles">
       <button class="btn principal arduino" id="btnArduino" aria-pressed="false"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0V8zM12 18v4"/></svg><span class="txt">Conectar Arduino</span><span class="corto">Arduino</span></button>
+      <button class="btn principal arduino" id="btnBT" aria-pressed="false"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11"/></svg><span class="txt">Conectar Bluetooth</span><span class="corto">Bluetooth</span></button>
       <button class="btn principal escucha" id="btnEscuchar" aria-pressed="false"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM19 11a7 7 0 0 1-14 0M12 18v4"/></svg><span class="txt">Activar a Lumi</span><span class="corto">Escuchar</span></button>
       <button class="btn" id="btnOn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span class="txt">Encender todas</span><span class="corto">Encender</span></button>
       <button class="btn" id="btnOff"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span class="txt">Apagar todas</span><span class="corto">Apagar</span></button>
@@ -241,21 +272,51 @@
       <summary>Ajustes y registro</summary>
       <div class="ajustes-cuerpo">
         <div>
-          <label class="campo">
-            <span>Modelo de Teachable Machine (enlace o carpeta local como ./modelo/)</span>
-            <input type="text" id="urlModelo" value="https://teachablemachine.withgoogle.com/models/LfL5sSgUa/">
-          </label>
-          <div class="campo">
+          <div class="campo" data-modos="vosk tm web">
             <span>Confianza mínima para aceptar una orden</span>
-            <div class="fila"><input type="range" id="umbral" min="50" max="99" value="85" aria-label="Confianza mínima"><b id="umbralTxt">85%</b></div>
+            <div class="fila"><input type="range" id="umbral" min="30" max="99" value="70" aria-label="Confianza mínima"><b id="umbralTxt">70%</b></div>
           </div>
-          <label class="fila campo"><input type="checkbox" id="chkVoz" checked><span style="margin:0;color:var(--niebla)">Lumi responde en voz alta</span></label>
+
+          <label class="fila campo" data-modos="vosk web">
+            <input type="checkbox" id="chkWake">
+            <span class="txt-check">Exigir la palabra de activación («Oye Lumi» o «Lumi») antes de la orden</span>
+          </label>
+
+          <label class="fila campo" data-modos="vosk">
+            <input type="checkbox" id="chkGram" checked>
+            <span class="txt-check">Usar lista cerrada de frases (más exacto y más rápido)</span>
+          </label>
+          <label class="fila campo" data-modos="vosk">
+            <input type="checkbox" id="chkLumi">
+            <span class="txt-check">El modelo conoce la palabra «Lumi» (búscala en graph/words.txt dentro del modelo)</span>
+          </label>
+          <label class="campo" data-modos="vosk">
+            <span>Modelo de Vosk (archivo .tar.gz dentro de la carpeta de la página)</span>
+            <input type="text" id="urlVosk" value="modelo-vosk/modelo-es.tar.gz">
+          </label>
+
+          <label class="campo" data-modos="tm">
+            <span>Modelo de Teachable Machine (carpeta local como ./modelo/ o un enlace)</span>
+            <input type="text" id="urlModelo" value="./modelo/">
+          </label>
+
+          <div class="campo" data-modos="web">
+            <span>Idioma / Acento de reconocimiento</span>
+            <select id="selIdioma">
+              <option value="es-CO" selected>Español (Colombia)</option>
+              <option value="es-MX">Español (México / Latinoamérica)</option>
+              <option value="es-ES">Español (España)</option>
+            </select>
+          </div>
+
+          <label class="fila campo"><input type="checkbox" id="chkVoz" checked><span class="txt-check">Lumi responde en voz alta</span></label>
           <div class="campo">
-            <span>Voz de Lumi (en Edge, las «Natural» suenan mejor)</span>
+            <span>Voz de Lumi (sin internet funcionan las voces instaladas en tu equipo)</span>
             <div class="fila"><select id="selVoz" aria-label="Voz de Lumi"></select><button class="btn" id="btnProbarVoz" type="button">Probar</button></div>
           </div>
-          <div id="barras"></div>
-          <p class="nota">Cada clase debe incluir «enciende» o «apaga» y la habitación (sala, cocina, cuarto) o la palabra «todo» para las tres luces. Las clases de ruido se ignoran. Cuando uses los botones, Lumi no responde: solo contesta a la voz.</p>
+
+          <div id="barras" data-modos="tm"></div>
+          <p class="nota" id="nota"></p>
         </div>
         <div>
           <div class="campo"><span>Registro</span><div id="log"></div></div>
@@ -265,8 +326,6 @@
   </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@0.4.0/dist/speech-commands.min.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 // Cambia el texto largo (escritorio) y el corto (dock del celular) de un botón, y su estado activo
@@ -281,11 +340,46 @@ const log = msg => {
   d.textContent = new Date().toLocaleTimeString() + '  ' + msg;
   $('log').prepend(d);
 };
+function conTiempo(promesa, ms, mensaje) {
+  return Promise.race([promesa, new Promise((_, rej) => setTimeout(() => rej(new Error(mensaje)), ms))]);
+}
+
+/* =====================================================
+   LIBRERÍAS: primero las locales (carpeta lib/), y solo si
+   no existen se intenta la copia en internet.
+   ===================================================== */
+const LIBS = {
+  vosk: ['lib/vosk.js', 'https://cdn.jsdelivr.net/npm/vosk-browser@0.0.8/dist/vosk.js'],
+  tf:   ['lib/tf.min.js', 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js'],
+  sc:   ['lib/speech-commands.min.js', 'https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@0.4.0/dist/speech-commands.min.js']
+};
+const scriptsCargados = {};
+function cargarScript(rutas) {
+  const clave = rutas[0];
+  if (scriptsCargados[clave]) return scriptsCargados[clave];
+  scriptsCargados[clave] = new Promise((ok, mal) => {
+    let i = 0;
+    const probar = () => {
+      if (i >= rutas.length) {
+        delete scriptsCargados[clave];
+        mal(new Error('No pude cargar «' + rutas[0] + '». Revisa que la carpeta lib/ esté junto al index.html.'));
+        return;
+      }
+      const s = document.createElement('script');
+      s.src = rutas[i++];
+      s.onload = () => { log('Librería cargada: ' + rutas[i - 1]); ok(); };
+      s.onerror = () => { s.remove(); probar(); };
+      document.head.appendChild(s);
+    };
+    probar();
+  });
+  return scriptsCargados[clave];
+}
 
 /* =====================================================
    HABITACIONES  (letra para encender / apagar en el Arduino)
    Para agregar una: añade una línea aquí, un pin en el .ino
-   y una clase en Teachable Machine con su nombre.
+   y su nombre en las frases de voz.
    ===================================================== */
 const HABITACIONES = {
   sala:   { on: 'S', off: 's', pin: 'D4', articulo: 'la sala' },
@@ -337,7 +431,9 @@ function ponerMarca() {
 /* =====================================================
    LUMI: orbe, burbuja y voz
    ===================================================== */
-let escuchando = false, hablando = false;
+let escuchando = false, hablando = false, iniciando = false, sordoHasta = 0;
+// Lumi no se escucha mientras habla ni un instante después (así no confunde su propia voz con una orden)
+const estaSordo = () => hablando || Date.now() < sordoHasta;
 
 function ficha(idFicha, idTxt, texto, clase) {
   $(idFicha).className = 'ficha' + (clase ? ' ' + clase : '');
@@ -348,7 +444,8 @@ function orbeEnReposo() { setOrbe(escuchando ? 'escucha' : 'reposo'); }
 function decir(texto) { $('burbuja').textContent = texto; }
 
 let vozLumi = null;
-// Puntaje para elegir sola una voz femenina, cálida y natural (las «Natural» de Edge suenan mucho mejor)
+// Puntaje para elegir sola una voz femenina, cálida y natural.
+// Sin internet solo sirven las voces instaladas en el equipo (localService).
 const VOCES_FEMENINAS = ['salome', 'dalia', 'paloma', 'elena', 'elvira', 'sabina', 'helena', 'laura', 'catalina', 'google español'];
 const VOCES_MASCULINAS = ['gonzalo', 'jorge', 'alvaro', 'pablo', 'raul', 'diego', 'tomas', 'juan', 'pedro', 'carlos', 'enrique', 'alonso', 'arnau'];
 function puntajeVoz(v) {
@@ -361,6 +458,7 @@ function puntajeVoz(v) {
   if (VOCES_MASCULINAS.some(x => n.includes(x))) p -= 80;
   if (/^es[-_]CO/i.test(v.lang)) p += 8;
   else if (/^es[-_](MX|US|419)/i.test(v.lang)) p += 4;
+  if (v.localService === false && !navigator.onLine) p -= 200;   // sin internet no sonaría
   return p;
 }
 function listarVoces() {
@@ -376,12 +474,13 @@ function listarVoces() {
   es.forEach(v => {
     const o = document.createElement('option');
     o.value = v.name;
-    o.textContent = v.name.replace(/^Microsoft /, '') + ' (' + v.lang + ')';
+    o.textContent = v.name.replace(/^Microsoft /, '') + ' (' + v.lang + ')' + (v.localService === false ? ' · requiere internet' : '');
     sel.appendChild(o);
   });
   let guardada = null;
   try { guardada = localStorage.getItem('lumiVoz'); } catch (e) {}
-  vozLumi = es.find(v => v.name === guardada) || es[0];
+  const guardadaVoz = es.find(v => v.name === guardada);
+  vozLumi = (guardadaVoz && !(guardadaVoz.localService === false && !navigator.onLine)) ? guardadaVoz : es[0];
   sel.value = vozLumi.name;
 }
 function crearEnunciado(texto) {
@@ -392,7 +491,12 @@ function crearEnunciado(texto) {
   u.pitch = 1.1;    // algo más suave (las voces «Natural» ignoran este ajuste)
   return u;
 }
-if ('speechSynthesis' in window) { listarVoces(); speechSynthesis.onvoiceschanged = listarVoces; }
+if ('speechSynthesis' in window) {
+  listarVoces();
+  speechSynthesis.onvoiceschanged = listarVoces;
+  window.addEventListener('online', listarVoces);
+  window.addEventListener('offline', listarVoces);
+}
 $('selVoz').onchange = () => {
   vozLumi = speechSynthesis.getVoices().find(v => v.name === $('selVoz').value) || null;
   try { localStorage.setItem('lumiVoz', $('selVoz').value); } catch (e) {}
@@ -417,7 +521,8 @@ function responder(texto) {
   let seguro;
   const terminar = () => {
     clearTimeout(seguro);
-    setTimeout(() => { hablando = false; }, 400);   // margen para que el micrófono no capte el eco
+    sordoHasta = Date.now() + 1200;   // margen para que el micrófono no capte el eco ni la cola de la voz
+    hablando = false;
     orbeEnReposo();
   };
   hablando = true;
@@ -485,10 +590,16 @@ async function desconectarArduino() {
 async function enviar(on, hab) {
   pintarLuz(hab, on);
   const verbo = on ? 'ENCENDER' : 'APAGAR';
-  if (!escritor) { log(verbo + ' ' + hab + ' (solo en pantalla: Arduino no conectado)'); return false; }
+  if (!escritor && !bleChar) { log(verbo + ' ' + hab + ' (solo en pantalla: Arduino no conectado)'); return false; }
   const caracter = hab === 'todas' ? (on ? '1' : '0') : HABITACIONES[hab][on ? 'on' : 'off'];
   try {
-    await escritor.write(new TextEncoder().encode(caracter));
+    const bytes = new TextEncoder().encode(caracter);
+    if (bleChar) {
+      if (bleChar.writeValueWithoutResponse) await bleChar.writeValueWithoutResponse(bytes);
+      else await bleChar.writeValue(bytes);
+    } else {
+      await escritor.write(bytes);
+    }
     log(verbo + ' ' + hab + ' → enviado «' + caracter + '»');
     return true;
   } catch (e) {
@@ -497,14 +608,276 @@ async function enviar(on, hab) {
   }
 }
 
-$('btnArduino').onclick = () => puerto ? desconectarArduino() : conectarArduino();
+/* =====================================================
+   ARDUINO por Bluetooth (módulo HM-10, BLE) con Web Bluetooth
+   Funciona en Chrome de Android y en Chrome/Edge de escritorio (no en iPhone).
+   ===================================================== */
+let bleDisp = null, bleChar = null;
+const BLE_SERVICIO = 0xFFE0, BLE_CARACTERISTICA = 0xFFE1;
+
+async function conectarBluetooth() {
+  if (!('bluetooth' in navigator)) {
+    alert('Este navegador no soporta Web Bluetooth. Usa Chrome en Android (en iPhone no funciona).');
+    return;
+  }
+  try {
+    ficha('fichaArduino', 'txtArduino', 'buscando…', 'espera');
+    bleDisp = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [BLE_SERVICIO] }, { namePrefix: 'HM' }, { namePrefix: 'BT05' }, { namePrefix: 'Lumi' }],
+      optionalServices: [BLE_SERVICIO]
+    });
+    bleDisp.addEventListener('gattserverdisconnected', alCaerBluetooth);
+    ficha('fichaArduino', 'txtArduino', 'conectando…', 'espera');
+    const servidor = await bleDisp.gatt.connect();
+    const servicio = await servidor.getPrimaryService(BLE_SERVICIO);
+    bleChar = await servicio.getCharacteristic(BLE_CARACTERISTICA);
+    ficha('fichaArduino', 'txtArduino', 'Bluetooth', 'ok');
+    etiquetaBtn('btnBT', 'Desconectar Bluetooth', 'Desconectar', true);
+    log('Bluetooth listo: ' + (bleDisp.name || 'HM-10'));
+    decir('Bluetooth conectado. Ya puedo encender las luces de verdad.');
+  } catch (e) {
+    log('No se pudo conectar por Bluetooth: ' + e.message);
+    ficha('fichaArduino', 'txtArduino', 'sin conectar', '');
+    limpiarBluetooth();
+  }
+}
+function limpiarBluetooth() {
+  if (bleDisp) bleDisp.removeEventListener('gattserverdisconnected', alCaerBluetooth);
+  bleDisp = null; bleChar = null;
+  etiquetaBtn('btnBT', 'Conectar Bluetooth', 'Bluetooth', false);
+}
+function alCaerBluetooth() {
+  log('Se perdió la conexión Bluetooth (¿te alejaste o se apagó el Arduino?).');
+  ficha('fichaArduino', 'txtArduino', 'sin conectar', '');
+  limpiarBluetooth();
+}
+function desconectarBluetooth() {
+  try { if (bleDisp && bleDisp.gatt.connected) bleDisp.gatt.disconnect(); } catch (e) { log('Error al cerrar: ' + e.message); }
+  ficha('fichaArduino', 'txtArduino', 'sin conectar', '');
+  limpiarBluetooth();
+  log('Bluetooth desconectado.');
+}
+
+$('btnArduino').onclick = () => puerto ? desconectarArduino() : (bleChar ? log('Primero desconecta el Bluetooth.') : conectarArduino());
+$('btnBT').onclick = () => bleChar ? desconectarBluetooth() : (puerto ? log('Primero desconecta el USB.') : conectarBluetooth());
+// Cada dispositivo muestra solo lo que su navegador puede hacer
+if (!('serial' in navigator)) $('btnArduino').hidden = true;
+if (!('bluetooth' in navigator)) $('btnBT').hidden = true;
 $('btnOn').onclick  = () => enviar(true, 'todas');
 $('btnOff').onclick = () => enviar(false, 'todas');
 
 /* =====================================================
-   MODELO de Teachable Machine
+   INTERPRETAR ÓRDENES (modos Vosk y Navegador: llegan como texto)
    ===================================================== */
-let reconocedor = null, etiquetas = [], accionPorEtiqueta = [];
+function normalizar(str) {
+  return str.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+// Variantes con las que el reconocedor puede escribir «Lumi»
+const RE_WAKE = /\b(lumi|lumy|lummy|loomi|luni|lomi|lumis|lumie|lunes|lumen|lu mi|lui mi)\b/;
+// En Vosk también vale «Oye»: es una palabra que el modelo sí conoce, aunque no conozca «Lumi»
+const RE_WAKE_VOSK = /\b(oye|lumi|lumy|lummy|loomi|luni|lomi|lumis|lumie|lunes|lumen|lu mi|lui mi)\b/;
+
+function interpretarComando(textoCrudo) {
+  const t = normalizar(textoCrudo).replace(/\[unk\]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  const reWake = modo === 'vosk' ? RE_WAKE_VOSK : RE_WAKE;
+  if ($('chkWake').checked && !reWake.test(t)) {
+    return { ignorado: true, razon: modo === 'vosk' ? 'No empezaste con «Oye Lumi» (o «Oye») al dar la orden.' : 'No dijiste «Lumi» al dar la orden.' };
+  }
+
+  // Comandos especiales estilo Harry Potter
+  if (t.includes('lumos')) return { on: true, hab: 'todas' };
+  if (/\bnox\b/.test(t)) return { on: false, hab: 'todas' };
+
+  // Intención: encender o apagar
+  let on = null;
+  if (/\b(enciende|encender|prende|prender|activa|activar|ilumina|iluminar|abre)\b/.test(t)) on = true;
+  else if (/\b(apaga|apagar|desactiva|desactivar|cierra|oscurece|quita)\b/.test(t)) on = false;
+  if (on === null) return { ignorado: true, razon: 'No identifiqué si querías «encender» o «apagar».' };
+
+  // Lugar de la casa
+  let hab = null;
+  if (/\b(sala|salon|living|estancia)\b/.test(t)) hab = 'sala';
+  else if (/\b(cocina)\b/.test(t)) hab = 'cocina';
+  else if (/\b(cuarto|habitacion|pieza|dormitorio|alcoba)\b/.test(t)) hab = 'cuarto';
+  else if (/\b(todo|toda|todas|todos|casa|luces)\b/.test(t)) hab = 'todas';
+  if (!hab) return { ignorado: true, razon: 'No mencionaste qué lugar (sala, cocina, cuarto o todo).' };
+
+  return { on, hab };
+}
+
+// Se llama solo cuando la orden llega por voz: aquí Lumi responde.
+async function ordenPorVoz(a, etiqueta, detalle) {
+  $('escuche').textContent = 'Escuché: «' + etiqueta + '» (' + detalle + ')';
+  const llego = await enviar(a.on, a.hab);
+  let texto = frase(a.on, a.hab);
+  if (!llego) texto += ' Lo hice en pantalla, pero el Arduino no está conectado.';
+  responder(texto);
+}
+
+// Evita ejecutar dos veces la misma orden (una al vuelo y otra al terminar la frase)
+let ultimaOrden = { clave: '', t: 0 };
+const ESPERA_ORDEN_MS = 2000;
+
+// texto: lo que se oyó · conf: 0 a 1 · parcial: true si la frase aún no termina
+function procesarTexto(texto, conf, parcial) {
+  const pct = Math.round(conf * 100);
+  if (!parcial) {
+    anillo(conf);
+    setTimeout(() => { if (escuchando) anillo(0); }, 2500);
+  }
+  const cmd = interpretarComando(texto);
+  if (cmd.ignorado) {
+    if (!parcial) {
+      $('escuche').textContent = 'Oí: «' + texto + '»';
+      $('decision').textContent = cmd.razon;
+      log('Ignorado («' + texto + '»): ' + cmd.razon);
+    }
+    return false;
+  }
+  const clave = (cmd.on ? '1' : '0') + cmd.hab;
+  const ahora = Date.now();
+  if (clave === ultimaOrden.clave && ahora - ultimaOrden.t < ESPERA_ORDEN_MS) return true;   // ya atendida
+  if (!parcial && conf < Number($('umbral').value) / 100) {
+    const msg = 'Oí «' + texto + '» (' + pct + '%), menos que tu mínimo de ' + $('umbral').value + '%.';
+    $('decision').textContent = msg;
+    log(msg);
+    return false;
+  }
+  ultimaOrden = { clave, t: ahora };
+  $('decision').textContent = '';
+  const detalle = parcial ? 'al vuelo' : pct + '%';
+  log('Orden aceptada: «' + texto + '» (' + detalle + ')');
+  ordenPorVoz(cmd, texto, detalle);
+  return true;
+}
+
+/* =====================================================
+   MOTOR 1 · VOSK (sin internet)
+   ===================================================== */
+// Lista cerrada de frases: Vosk solo elige entre estas (o «[unk]» si no reconoce nada).
+// Si alguna palabra (por ejemplo «lumi») no está en el vocabulario del modelo, Vosk la ignora sin fallar.
+const VERBOS_V = ['enciende', 'prende', 'apaga'];
+const LUGARES_V = ['la sala', 'la cocina', 'el cuarto', 'todo', 'todas las luces', 'la luz de la sala', 'la luz de la cocina', 'la luz del cuarto'];
+let FRASES_VOSK = new Set();
+let GRAMATICA_VOSK = '';
+// Con la palabra de activación obligatoria, TODAS las frases empiezan por «oye»: así la voz de Lumi
+// («Listo, ya encendí la cocina») no puede confundirse con una orden, aunque «lumi» no esté en el vocabulario.
+function prepararGramatica() {
+  const exigir = $('chkWake').checked;
+  const prefijos = exigir ? ['oye ', 'oye lumi ', 'oye lumi por favor '] : ['', 'oye ', 'oye lumi ', 'oye lumi por favor '];
+  if ($('chkLumi').checked) prefijos.push('lumi ', 'lumi por favor ');
+  const set = new Set();
+  VERBOS_V.forEach(v => LUGARES_V.forEach(l => prefijos.forEach(p => set.add((p + v + ' ' + l).trim()))));
+  FRASES_VOSK = set;
+  GRAMATICA_VOSK = JSON.stringify([...set, '[unk]']);
+}
+prepararGramatica();
+
+let modeloVosk = null, reconVosk = null, ctxVosk = null, nodoVosk = null, fuenteVosk = null, streamVosk = null;
+let parcialVosk = '', contParcialVosk = 0;
+
+async function cargarModeloVosk() {
+  await cargarScript(LIBS.vosk);
+  if (typeof Vosk === 'undefined') throw new Error('La librería de Vosk no se cargó bien.');
+  const ruta = new URL($('urlVosk').value.trim(), location.href).href;   // ruta completa: el motor corre en un hilo aparte
+  log('Cargando modelo Vosk desde ' + ruta);
+  const t0 = Date.now();
+  const tic = setInterval(() => decir('Cargando mi modelo de voz… ' + Math.round((Date.now() - t0) / 1000) + ' s. La primera vez tarda; después queda guardado en el navegador.'), 1000);
+  // Detiene el hilo del motor sin pasar por su propio cierre (que falla si el modelo nunca llegó a cargar)
+  const matar = m => { try { m.worker.terminate(); } catch (e) {} };
+  try {
+    modeloVosk = await new Promise((ok, mal) => {
+      const m = new Vosk.Model(ruta, -1);
+      const limite = setTimeout(() => { matar(m); mal(new Error('El modelo tardó más de 3 minutos en cargar.')); }, 180000);
+      m.on('load', msg => { clearTimeout(limite); if (msg.result) ok(m); else { matar(m); mal(new Error('El modelo no se pudo cargar.')); } });
+      m.on('error', msg => { clearTimeout(limite); matar(m); mal(new Error(msg.error || 'Error desconocido al cargar el modelo.')); });
+    });
+    log('Modelo Vosk listo (' + Math.round((Date.now() - t0) / 1000) + ' s).');
+  } catch (e) {
+    const txt = String(e.message || e);
+    if (/404|HTTP error|Failed to fetch|NetworkError/i.test(txt)) {
+      throw new Error('No encontré el modelo de Vosk en «' + $('urlVosk').value.trim() + '». Sigue el paso 2 del LEEME y abre la página con Live Server.');
+    }
+    if (/más de 3 minutos/.test(txt)) throw e;
+    throw new Error('No pude cargar el modelo de Vosk (' + txt + '). Revisa que el archivo .tar.gz sea el correcto (paso 2 del LEEME).');
+  } finally {
+    clearInterval(tic);
+  }
+}
+
+async function abrirMicVosk() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    throw new Error('Este navegador no permite usar el micrófono aquí. Abre la página con Live Server (localhost) en Chrome o Edge.');
+  }
+  try {
+    streamVosk = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 } });
+  } catch (e) {
+    throw new Error(e.name === 'NotAllowedError'
+      ? 'Necesito permiso para usar el micrófono. Actívalo en la barra de direcciones del navegador.'
+      : 'No pude abrir el micrófono: ' + e.message);
+  }
+  const AC = window.AudioContext || window.webkitAudioContext;
+  ctxVosk = new AC();
+  await ctxVosk.resume();
+  prepararGramatica();
+  const gramatica = $('chkGram').checked ? GRAMATICA_VOSK : undefined;
+  reconVosk = new modeloVosk.KaldiRecognizer(ctxVosk.sampleRate, gramatica);
+  reconVosk.setWords(true);
+  reconVosk.on('result', m => alResultadoVosk(m.result));
+  reconVosk.on('partialresult', m => alParcialVosk(m.result.partial));
+  reconVosk.on('error', m => log('Vosk: ' + m.error));
+  fuenteVosk = ctxVosk.createMediaStreamSource(streamVosk);
+  nodoVosk = ctxVosk.createScriptProcessor(4096, 1, 1);
+  nodoVosk.onaudioprocess = ev => {
+    if (estaSordo()) return;     // evita que Lumi se escuche a sí misma
+    try { reconVosk.acceptWaveform(ev.inputBuffer); } catch (e) {}
+  };
+  fuenteVosk.connect(nodoVosk);
+  nodoVosk.connect(ctxVosk.destination);
+  log('Vosk escuchando a ' + ctxVosk.sampleRate + ' Hz' + (gramatica ? ' con lista de ' + FRASES_VOSK.size + ' frases.' : ' en modo libre.'));
+}
+
+function alParcialVosk(p) {
+  if (estaSordo() || !p) return;
+  $('escuche').textContent = 'Escuchando: «' + p + '…»';
+  anillo(0.45);
+  if (p === parcialVosk) contParcialVosk++; else { parcialVosk = p; contParcialVosk = 1; }
+  // Con la lista cerrada, si ya se oyó una frase completa y se mantiene, no esperamos a que termines de hablar
+  if ($('chkGram').checked && contParcialVosk >= 2 && FRASES_VOSK.has(normalizar(p).trim())) {
+    procesarTexto(p, 0.9, true);
+  }
+}
+function alResultadoVosk(r) {
+  parcialVosk = ''; contParcialVosk = 0;
+  if (estaSordo() || !r) return;
+  const texto = (r.text || '').replace(/\[unk\]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!texto) { anillo(0); return; }
+  const palabras = Array.isArray(r.result) ? r.result : [];
+  const conf = palabras.length ? palabras.reduce((s, w) => s + (w.conf || 0), 0) / palabras.length : 0.9;
+  procesarTexto(texto, conf, false);
+}
+
+async function iniciarVosk() {
+  ficha('fichaVoz', 'txtVoz', 'cargando…', 'espera');
+  if (!modeloVosk) await cargarModeloVosk();
+  await abrirMicVosk();
+}
+async function pararVosk() {
+  try { if (nodoVosk) { nodoVosk.onaudioprocess = null; nodoVosk.disconnect(); } } catch (e) {}
+  try { if (fuenteVosk) fuenteVosk.disconnect(); } catch (e) {}
+  try { if (streamVosk) streamVosk.getTracks().forEach(t => t.stop()); } catch (e) {}
+  try { if (reconVosk) reconVosk.remove(); } catch (e) {}
+  try { if (ctxVosk) await ctxVosk.close(); } catch (e) {}
+  nodoVosk = fuenteVosk = streamVosk = reconVosk = ctxVosk = null;
+  parcialVosk = ''; contParcialVosk = 0;
+}
+
+/* =====================================================
+   MOTOR 2 · TEACHABLE MACHINE
+   ===================================================== */
+const TM_EN_LINEA = 'https://teachablemachine.withgoogle.com/models/LfL5sSgUa/';
+let reconTM = null, etiquetasTM = [], accionTM = [];
 const ultimaPorClase = {};   // evita repetir la misma orden mientras dices una sola frase
 const ESPERA_CLASE_MS = 1200;
 let ultimoInforme = 0;
@@ -535,8 +908,8 @@ function accionDe(etiqueta) {
 
 function crearBarras() {
   $('barras').innerHTML = '';
-  etiquetas.forEach((et, i) => {
-    const a = accionPorEtiqueta[i];
+  etiquetasTM.forEach((et, i) => {
+    const a = accionTM[i];
     const d = document.createElement('div');
     d.className = 'barra' + (a ? '' : ' ignorada');
     d.innerHTML = '<div class="et"><span></span><span id="p' + i + '">0%</span></div>' +
@@ -546,14 +919,12 @@ function crearBarras() {
   });
 }
 
-function conTiempo(promesa, ms, mensaje) {
-  return Promise.race([promesa, new Promise((_, rej) => setTimeout(() => rej(new Error(mensaje)), ms))]);
-}
-
-async function elegirUrlDisponible(url) {
+// Busca el modelo: primero donde dice el campo; si es una carpeta local y no está, prueba el enlace en línea.
+async function elegirUrlTM(url) {
   const candidatas = [url];
   const m = url.match(/teachablemachine\.withgoogle\.com\/models\/([^\/]+)\//);
   if (m) candidatas.push('https://storage.googleapis.com/tm-model/' + m[1] + '/');
+  if (!/^https?:/i.test(url)) candidatas.push(TM_EN_LINEA, 'https://storage.googleapis.com/tm-model/LfL5sSgUa/');
   for (const base of candidatas) {
     try {
       const r = await conTiempo(fetch(base + 'metadata.json', { cache: 'no-store' }), 15000, 'sin respuesta en 15 s');
@@ -563,109 +934,243 @@ async function elegirUrlDisponible(url) {
       log('⚠ No pude leer ' + base + 'metadata.json → ' + e.message);
     }
   }
-  log('Intento cargar de todos modos con la URL original…');
-  return url;
+  if (/^https?:/i.test(url)) { log('Intento cargar de todos modos con la URL original…'); return url; }
+  throw new Error('No encontré el modelo de Teachable Machine en «' + url + '». Para usarlo sin internet, descarga el modelo y ponlo en la carpeta modelo/ (mira el LEEME) y abre la página con Live Server.');
 }
 
-// Se llama solo cuando la orden llega por voz: aquí Lumi responde.
-async function ordenPorVoz(a, etiqueta, confianza) {
-  $('escuche').textContent = 'Escuché: «' + etiqueta + '» (' + confianza + '%)';
-  const llego = await enviar(a.on, a.hab);
-  let texto = frase(a.on, a.hab);
-  if (!llego) texto += ' Lo hice en pantalla, pero el Arduino no está conectado.';
-  responder(texto);
-}
-
-async function cargarYEscuchar() {
-  $('btnEscuchar').disabled = true;
-  try {
+async function iniciarTM() {
+  ficha('fichaVoz', 'txtVoz', 'cargando…', 'espera');
+  if (!reconTM) {
+    decir('Cargando mi modelo de voz. La primera vez puede tardar un poco.');
+    await cargarScript(LIBS.tf);
+    await cargarScript(LIBS.sc);
+    if (typeof speechCommands === 'undefined' || typeof tf === 'undefined') {
+      throw new Error('No cargaron las librerías de Teachable Machine (tfjs / speech-commands).');
+    }
+    log('Motor TensorFlow: ' + tf.getBackend());
     let url = $('urlModelo').value.trim();
     if (!url.endsWith('/')) url += '/';
-    ficha('fichaVoz', 'txtVoz', 'cargando…', 'espera');
-    decir('Cargando mi modelo de voz. La primera vez puede tardar un poco.');
-    log('Cargando modelo desde ' + url);
-
-    if (!reconocedor) {
-      if (typeof speechCommands === 'undefined' || typeof tf === 'undefined') {
-        throw new Error('No cargaron las librerías (tfjs / speech-commands). Revisa tu conexión a internet y recarga con Ctrl+F5.');
-      }
-      log('Motor TensorFlow: ' + tf.getBackend());
-      url = await elegirUrlDisponible(url);
-      reconocedor = speechCommands.create('BROWSER_FFT', undefined, url + 'model.json', url + 'metadata.json');
-      const ticker = setInterval(() => log('…sigue cargando el modelo (≈6 MB)'), 8000);
-      try {
-        await conTiempo(reconocedor.ensureModelLoaded(), 90000, 'El modelo tardó más de 90 s en cargar');
-      } finally { clearInterval(ticker); }
-      etiquetas = reconocedor.wordLabels();
-      accionPorEtiqueta = etiquetas.map(accionDe);
-      crearBarras();
-      log('Clases: ' + etiquetas.join(' | '));
-      if (!accionPorEtiqueta.some(a => a && a.on) || !accionPorEtiqueta.some(a => a && !a.on)) {
-        log('⚠ No encontré clases de encender y apagar. Revisa los nombres de las clases.');
-      }
+    url = await elegirUrlTM(url);
+    const r = speechCommands.create('BROWSER_FFT', undefined, url + 'model.json', url + 'metadata.json');
+    const ticker = setInterval(() => log('…sigue cargando el modelo (≈6 MB)'), 8000);
+    try {
+      await conTiempo(r.ensureModelLoaded(), 90000, 'El modelo tardó más de 90 s en cargar');
+    } finally { clearInterval(ticker); }
+    etiquetasTM = r.wordLabels();
+    accionTM = etiquetasTM.map(accionDe);
+    crearBarras();
+    log('Clases: ' + etiquetasTM.join(' | '));
+    if (!accionTM.some(a => a && a.on) || !accionTM.some(a => a && !a.on)) {
+      log('⚠ No encontré clases de encender y apagar. Revisa los nombres de las clases.');
     }
+    reconTM = r;
+  }
 
-    await reconocedor.listen(resultado => {
-      const scores = resultado.scores;
-      const umbral = Number($('umbral').value) / 100;
-      let mejor = 0;
-      scores.forEach((s, i) => {
-        $('v' + i).style.width = (s * 100).toFixed(0) + '%';
-        $('p' + i).textContent = (s * 100).toFixed(0) + '%';
-        if (s > scores[mejor]) mejor = i;
-      });
-      anillo(scores.reduce((m, s, i) => accionPorEtiqueta[i] ? Math.max(m, s) : m, 0));
-      const a = accionPorEtiqueta[mejor];
-      if (!a || scores[mejor] < 0.6) return;   // ruido o intento muy flojo: nada que explicar
-      const pct = (scores[mejor] * 100).toFixed(0);
-      const nombre = '«' + etiquetas[mejor] + '» al ' + pct + '%';
-      if (hablando) { informar('Oí ' + nombre + ', pero Lumi estaba hablando.'); return; }
-      if (scores[mejor] < umbral) { informar('Oí ' + nombre + ': menos que tu mínimo de ' + $('umbral').value + '%.'); return; }
-      const ahora = Date.now();
-      if (ahora - (ultimaPorClase[mejor] || 0) < ESPERA_CLASE_MS) return;   // misma frase, ya atendida
-      ultimaPorClase[mejor] = ahora;
-      $('decision').textContent = '';
-      log('Oí ' + nombre);
-      ordenPorVoz(a, etiquetas[mejor], pct);
-    }, {
-      includeSpectrogram: false,
-      probabilityThreshold: 0.5,
-      invokeCallbackOnNoiseAndUnknown: true,
-      overlapFactor: 0.5
+  await reconTM.listen(resultado => {
+    const scores = resultado.scores;
+    const umbral = Number($('umbral').value) / 100;
+    let mejor = 0;
+    scores.forEach((s, i) => {
+      $('v' + i).style.width = (s * 100).toFixed(0) + '%';
+      $('p' + i).textContent = (s * 100).toFixed(0) + '%';
+      if (s > scores[mejor]) mejor = i;
     });
+    anillo(scores.reduce((m, s, i) => accionTM[i] ? Math.max(m, s) : m, 0));
+    const a = accionTM[mejor];
+    if (!a || scores[mejor] < 0.6) return;   // ruido o intento muy flojo: nada que explicar
+    const pct = (scores[mejor] * 100).toFixed(0);
+    const nombre = '«' + etiquetasTM[mejor] + '» al ' + pct + '%';
+    if (estaSordo()) { informar('Oí ' + nombre + ', pero Lumi estaba hablando.'); return; }
+    if (scores[mejor] < umbral) { informar('Oí ' + nombre + ': menos que tu mínimo de ' + $('umbral').value + '%.'); return; }
+    const ahora = Date.now();
+    if (ahora - (ultimaPorClase[mejor] || 0) < ESPERA_CLASE_MS) return;   // misma frase, ya atendida
+    ultimaPorClase[mejor] = ahora;
+    $('decision').textContent = '';
+    log('Oí ' + nombre);
+    ordenPorVoz(a, etiquetasTM[mejor], pct + '%');
+  }, {
+    includeSpectrogram: false,
+    probabilityThreshold: 0.5,
+    invokeCallbackOnNoiseAndUnknown: true,
+    overlapFactor: 0.5
+  });
+}
+async function pararTM() {
+  try { if (reconTM && reconTM.isListening()) await reconTM.stopListening(); } catch (e) { log('Error al pausar: ' + e.message); }
+}
 
+/* =====================================================
+   MOTOR 3 · NAVEGADOR (Web Speech API, necesita internet)
+   ===================================================== */
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let reconWeb = null;
+
+async function iniciarWeb() {
+  if (!SpeechRecognition) {
+    throw new Error('Tu navegador no soporta reconocimiento de voz nativo. Usa Google Chrome o Microsoft Edge.');
+  }
+  if (!reconWeb) {
+    reconWeb = new SpeechRecognition();
+    reconWeb.continuous = true;
+    reconWeb.interimResults = true;
+
+    reconWeb.onstart = () => {
+      if (!escuchando) return;
+      ficha('fichaVoz', 'txtVoz', 'escuchando (Navegador)', 'ok');
+      orbeEnReposo();
+    };
+    reconWeb.onresult = ev => {
+      if (estaSordo()) return;   // evita que Lumi se escuche a sí misma
+      const res = ev.results[ev.results.length - 1];
+      const texto = res[0].transcript.trim();
+      // En algunos navegadores confidence viene en 0 aunque sea certero; usamos 0.92 por defecto
+      const conf = res[0].confidence > 0 ? res[0].confidence : 0.92;
+      if (!res.isFinal) {
+        $('escuche').textContent = 'Escuchando: «' + texto + '…»';
+        anillo(0.45);
+        procesarTexto(texto, conf, true);   // si ya es una orden completa, no espera a que termines de hablar
+        return;
+      }
+      procesarTexto(texto, conf, false);
+    };
+    reconWeb.onerror = e => {
+      if (e.error === 'no-speech') return; // silencio normal, sigue atento
+      log('Aviso de micrófono: ' + e.error);
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        escuchando = false;
+        ficha('fichaVoz', 'txtVoz', 'sin permiso', '');
+        etiquetaBtn('btnEscuchar', 'Activar a Lumi', 'Escuchar', false);
+        decir('Necesito permiso para usar el micrófono. Actívalo en la barra de direcciones del navegador.');
+      } else if (e.error === 'network') {
+        decir('El reconocimiento del navegador necesita internet y no lo encuentro. Prueba el modo «Sin internet (Vosk)».');
+      }
+    };
+    reconWeb.onend = () => {
+      // El navegador detiene la escucha tras pausas largas; si Lumi sigue activa, la reiniciamos
+      if (escuchando && modo === 'web') { try { reconWeb.start(); } catch (err) {} }
+    };
+  }
+  reconWeb.lang = $('selIdioma').value;
+  reconWeb.start();
+}
+async function pararWeb() {
+  try { if (reconWeb) reconWeb.stop(); } catch (e) {}
+}
+
+/* =====================================================
+   MODOS DE VOZ: cuál motor usa Lumi
+   ===================================================== */
+const MOTORES = {
+  vosk: { nombre: 'Vosk',              iniciar: iniciarVosk, parar: pararVosk },
+  tm:   { nombre: 'Teachable Machine', iniciar: iniciarTM,   parar: pararTM },
+  web:  { nombre: 'Navegador',         iniciar: iniciarWeb,  parar: pararWeb }
+};
+const EJEMPLOS = {
+  vosk: 'Prueba con <q>Oye Lumi, enciende la cocina</q>, <q>Oye, apaga la sala</q> o <q>Oye Lumi, apaga todo</q>.',
+  tm:   'Prueba con <q>Oye Lumi, enciende la cocina</q> o <q>Oye Lumi, apaga todo</q>.',
+  web:  'Prueba con <q>Oye Lumi, enciende la cocina</q>, <q>Lumi, apaga la sala</q>, <q>Lumi, apaga todo</q> o incluso <q>Lumi, lumos máxima</q>.'
+};
+const ANILLO_TXT = ' El anillo muestra qué tan segura estoy de lo que oí; la marca blanca es tu mínimo.';
+const NOTAS = {
+  vosk: 'Sin internet: Lumi reconoce tu voz con Vosk dentro de tu computador. Con la lista de frases activada solo busca órdenes como «oye lumi, enciende la cocina» o «oye, apaga todo», y responde sin esperar a que termines de hablar. Con la palabra de activación obligatoria, toda orden debe empezar con «Oye»; así Lumi no confunde su propia voz con una orden. Si «Lumi» está en el vocabulario del modelo (graph/words.txt), marca esa casilla y bastará decir «Lumi, enciende la cocina». La primera vez carga el modelo (tarda); después queda guardado en el navegador.',
+  tm:   'Teachable Machine: cada clase debe incluir «enciende» o «apaga» y la habitación (sala, cocina, cuarto) o la palabra «todo». Las clases de ruido se ignoran. Para usarlo sin internet descarga el modelo y ponlo en la carpeta modelo/.',
+  web:  'Navegador: usa el reconocimiento de voz de Chrome o Edge, que envía el audio a la nube, así que necesita internet. Entiende frases libres como «Lumi, por favor prende la luz de la cocina».'
+};
+// Cada modo recuerda su confianza mínima y si exige decir «Lumi»
+const umbralModo = { vosk: 70, tm: 85, web: 60 };
+const wakeModo = { vosk: true, tm: false, web: true };
+let modo = 'vosk';
+try { const g = localStorage.getItem('lumiModo'); if (MOTORES[g]) modo = g; } catch (e) {}
+
+function pintarModo() {
+  document.querySelectorAll('.modo').forEach(b => b.setAttribute('aria-pressed', b.dataset.modo === modo ? 'true' : 'false'));
+  document.querySelectorAll('[data-modos]').forEach(el => { el.hidden = !el.dataset.modos.split(' ').includes(modo); });
+  $('umbral').value = umbralModo[modo];
+  $('umbralTxt').textContent = umbralModo[modo] + '%';
+  ponerMarca();
+  $('chkWake').checked = wakeModo[modo];
+  $('ejemplo').innerHTML = EJEMPLOS[modo] + ANILLO_TXT;
+  $('nota').textContent = NOTAS[modo];
+  if (!escuchando) ficha('fichaVoz', 'txtVoz', 'sin activar', '');
+}
+
+async function cambiarModo(nuevo) {
+  if (nuevo === modo || iniciando) return;
+  const estabaEscuchando = escuchando;
+  if (escuchando) await pararEscucha(true);
+  umbralModo[modo] = Number($('umbral').value);
+  wakeModo[modo] = $('chkWake').checked;
+  modo = nuevo;
+  try { localStorage.setItem('lumiModo', modo); } catch (e) {}
+  pintarModo();
+  anillo(0);
+  decir('Ahora te escucho con: ' + MOTORES[modo].nombre + '.');
+  log('Modo de voz: ' + MOTORES[modo].nombre);
+  if (estabaEscuchando) iniciarEscucha();
+}
+
+async function iniciarEscucha() {
+  if (iniciando || escuchando) return;
+  iniciando = true;
+  $('btnEscuchar').disabled = true;
+  document.querySelectorAll('.modo').forEach(b => { b.disabled = true; });
+  try {
+    await MOTORES[modo].iniciar();
     escuchando = true;
     orbeEnReposo();
-    ficha('fichaVoz', 'txtVoz', 'escuchando', 'ok');
+    ficha('fichaVoz', 'txtVoz', 'escuchando (' + MOTORES[modo].nombre + ')', 'ok');
     etiquetaBtn('btnEscuchar', 'Pausar a Lumi', 'Pausar', true);
     decir('Te escucho. Dime, por ejemplo: «Oye Lumi, enciende la cocina» o «Oye Lumi, apaga todo».');
+    log('Escucha activa (' + MOTORES[modo].nombre + ').');
   } catch (e) {
-    log('Error con el modelo: ' + e.message);
+    const msg = e && e.message ? e.message : String(e);
+    log('Error con el modo ' + MOTORES[modo].nombre + ': ' + msg);
     ficha('fichaVoz', 'txtVoz', 'error', '');
-    decir('No pude cargar mi modelo de voz. Abre «Ajustes y registro» para ver qué pasó.');
-    reconocedor = null;
+    decir(msg);
+    try { await MOTORES[modo].parar(); } catch (err) {}
+    escuchando = false;
+    orbeEnReposo();
   } finally {
+    iniciando = false;
     $('btnEscuchar').disabled = false;
+    document.querySelectorAll('.modo').forEach(b => { b.disabled = false; });
   }
 }
 
-async function pararEscucha() {
-  try { if (reconocedor && reconocedor.isListening()) await reconocedor.stopListening(); } catch (e) { log('Error al pausar: ' + e.message); }
+async function pararEscucha(silencioso) {
   escuchando = false;
+  try { await MOTORES[modo].parar(); } catch (e) { log('Error al pausar: ' + e.message); }
   anillo(0);
   orbeEnReposo();
   ficha('fichaVoz', 'txtVoz', 'en pausa', 'espera');
   etiquetaBtn('btnEscuchar', 'Activar a Lumi', 'Escuchar', false);
-  decir('Me quedo en pausa. Pulsa «Activar a Lumi» cuando quieras hablarme.');
-  log('Escucha detenida.');
+  if (!silencioso) {
+    decir('Me quedo en pausa. Pulsa «Activar a Lumi» cuando quieras hablarme.');
+    log('Escucha detenida.');
+  }
 }
 
-$('btnEscuchar').onclick = () => escuchando ? pararEscucha() : cargarYEscuchar();
+$('btnEscuchar').onclick = () => escuchando ? pararEscucha() : iniciarEscucha();
+document.querySelectorAll('.modo').forEach(b => { b.onclick = () => cambiarModo(b.dataset.modo); });
 $('umbral').oninput = () => { $('umbralTxt').textContent = $('umbral').value + '%'; ponerMarca(); };
-ponerMarca();
+// Cambiar la lista de frases o el idioma mientras escucha: reinicia el motor para que tome el cambio
+async function reiniciarSiEscucha() {
+  if (!escuchando) return;
+  await pararEscucha(true);
+  iniciarEscucha();
+}
+$('chkGram').onchange = () => { if (modo === 'vosk') reiniciarSiEscucha(); };
+$('chkWake').onchange = () => { if (modo === 'vosk') reiniciarSiEscucha(); };
+$('chkLumi').onchange = () => { if (modo === 'vosk') reiniciarSiEscucha(); };
+$('selIdioma').onchange = () => { if (modo === 'web') reiniciarSiEscucha(); };
 
-if (!('serial' in navigator)) {
-  log('⚠ Este navegador no tiene Web Serial. Abre la página en Chrome o Edge.');
+pintarModo();
+if (location.protocol === 'file:') {
+  $('aviso').hidden = false;
+  log('⚠ Página abierta como archivo (file://). Para Vosk y el modelo local de Teachable Machine usa Live Server.');
+}
+if (!('serial' in navigator) && !('bluetooth' in navigator)) {
+  log('⚠ Este navegador no puede hablar con el Arduino (ni USB ni Bluetooth). Usa Chrome o Edge (en iPhone no es posible).');
 }
 </script>
 </body>
