@@ -164,11 +164,6 @@
   .fila input[type=range] { flex: 1; accent-color: var(--luz); }
   input[type=checkbox] { accent-color: var(--luz); width: 18px; height: 18px; flex: none; }
   .fila.campo > span.txt-check { margin: 0; color: var(--niebla); }
-  .barra { margin: 6px 0; }
-  .barra .et { display: flex; justify-content: space-between; gap: 10px; font-size: .82rem; margin-bottom: 3px; }
-  .barra .fondo { height: 7px; background: #0A1028; border-radius: 6px; overflow: hidden; }
-  .barra .valor { height: 100%; width: 0; background: var(--luz); transition: width .1s; }
-  .barra.ignorada .valor { background: var(--muro); }
   #log { height: 190px; overflow: auto; font-family: ui-monospace, Consolas, monospace; font-size: .78rem; line-height: 1.5; background: #0A1028; border-radius: 10px; padding: 10px; }
   .nota { color: var(--tenue); font-size: .82rem; line-height: 1.45; margin: 8px 0 0; }
 
@@ -304,7 +299,7 @@
   </header>
 
   <p class="aviso" id="aviso" hidden>
-    Abriste la página como archivo suelto. Los modos <b>Vosk</b> y <b>Teachable Machine con modelo local</b> necesitan abrirla desde un servidor local:
+    Abriste la página como archivo suelto. El modo <b>Vosk</b> necesita abrirla desde un servidor local:
     en VS Code, clic derecho sobre <code>index.html</code> → <b>Open with Live Server</b>. El modo «Navegador» sí funciona así.
   </p>
 
@@ -326,7 +321,6 @@
           <span id="etModos">Cómo me escuchas</span>
           <div class="modos" role="group" aria-labelledby="etModos">
             <button class="modo" type="button" data-modo="vosk" aria-pressed="true">Sin internet (Vosk)</button>
-            <button class="modo" type="button" data-modo="tm" aria-pressed="false">Teachable Machine</button>
             <button class="modo" type="button" data-modo="web" aria-pressed="false">Navegador (con internet)</button>
           </div>
         </div>
@@ -350,7 +344,7 @@
       <summary>Ajustes y registro</summary>
       <div class="ajustes-cuerpo">
         <div>
-          <div class="campo" data-modos="vosk tm web">
+          <div class="campo" data-modos="vosk web">
             <span>Confianza mínima para aceptar una orden</span>
             <div class="fila"><input type="range" id="umbral" min="30" max="99" value="70" aria-label="Confianza mínima"><b id="umbralTxt">70%</b></div>
           </div>
@@ -373,10 +367,6 @@
             <input type="text" id="urlVosk" value="modelo-vosk/modelo-es.tar.gz">
           </label>
 
-          <label class="campo" data-modos="tm">
-            <span>Modelo de Teachable Machine (carpeta local como ./modelo/ o un enlace)</span>
-            <input type="text" id="urlModelo" value="./modelo/">
-          </label>
 
           <div class="campo" data-modos="web">
             <span>Idioma / Acento de reconocimiento</span>
@@ -393,7 +383,6 @@
             <div class="fila"><select id="selVoz" aria-label="Voz de Lumi"></select><button class="btn" id="btnProbarVoz" type="button">Probar</button></div>
           </div>
 
-          <div id="barras" data-modos="tm"></div>
           <p class="nota" id="nota"></p>
         </div>
         <div>
@@ -427,9 +416,7 @@ function conTiempo(promesa, ms, mensaje) {
    no existen se intenta la copia en internet.
    ===================================================== */
 const LIBS = {
-  vosk: ['lib/vosk.js', 'https://cdn.jsdelivr.net/npm/vosk-browser@0.0.8/dist/vosk.js'],
-  tf:   ['lib/tf.min.js', 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js'],
-  sc:   ['lib/speech-commands.min.js', 'https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@0.4.0/dist/speech-commands.min.js']
+  vosk: ['lib/vosk.js', 'https://cdn.jsdelivr.net/npm/vosk-browser@0.0.8/dist/vosk.js']
 };
 const scriptsCargados = {};
 function cargarScript(rutas) {
@@ -978,133 +965,7 @@ async function pararVosk() {
 }
 
 /* =====================================================
-   MOTOR 2 · TEACHABLE MACHINE
-   ===================================================== */
-const TM_EN_LINEA = 'https://teachablemachine.withgoogle.com/models/LfL5sSgUa/';
-let reconTM = null, etiquetasTM = [], accionTM = [];
-const ultimaPorClase = {};   // evita repetir la misma orden mientras dices una sola frase
-const ESPERA_CLASE_MS = 1200;
-let ultimoInforme = 0;
-// Explica en pantalla y en el registro por qué una orden NO se ejecutó
-function informar(texto) {
-  const ahora = Date.now();
-  if (ahora - ultimoInforme < 800) return;
-  ultimoInforme = ahora;
-  $('decision').textContent = texto;
-  log(texto);
-}
-
-function accionDe(etiqueta) {
-  const t = etiqueta.toLowerCase();
-  if (t.includes('ruido') || t.includes('fondo') || t.includes('background')) return null;
-  let on;
-  if (t.includes('apag')) on = false;
-  else if (t.includes('prend') || t.includes('encend') || t.includes('enciend')) on = true;
-  else return null;
-  let hab = null;
-  if (t.includes('sala')) hab = 'sala';
-  else if (t.includes('cocina')) hab = 'cocina';
-  else if (t.includes('cuarto')) hab = 'cuarto';
-  else if (t.includes('todo') || t.includes('toda')) hab = 'todas';
-  if (!hab) return null;   // clase sin habitación ni «todo»: se ignora
-  return { on, hab };
-}
-
-function crearBarras() {
-  $('barras').innerHTML = '';
-  etiquetasTM.forEach((et, i) => {
-    const a = accionTM[i];
-    const d = document.createElement('div');
-    d.className = 'barra' + (a ? '' : ' ignorada');
-    d.innerHTML = '<div class="et"><span></span><span id="p' + i + '">0%</span></div>' +
-                  '<div class="fondo"><div class="valor" id="v' + i + '"></div></div>';
-    d.querySelector('span').textContent = et;
-    $('barras').appendChild(d);
-  });
-}
-
-// Busca el modelo: primero donde dice el campo; si es una carpeta local y no está, prueba el enlace en línea.
-async function elegirUrlTM(url) {
-  const candidatas = [url];
-  const m = url.match(/teachablemachine\.withgoogle\.com\/models\/([^\/]+)\//);
-  if (m) candidatas.push('https://storage.googleapis.com/tm-model/' + m[1] + '/');
-  if (!/^https?:/i.test(url)) candidatas.push(TM_EN_LINEA, 'https://storage.googleapis.com/tm-model/LfL5sSgUa/');
-  for (const base of candidatas) {
-    try {
-      const r = await conTiempo(fetch(base + 'metadata.json', { cache: 'no-store' }), 15000, 'sin respuesta en 15 s');
-      if (r.ok) { log('Modelo accesible en ' + base); return base; }
-      log('⚠ ' + base + ' respondió ' + r.status);
-    } catch (e) {
-      log('⚠ No pude leer ' + base + 'metadata.json → ' + e.message);
-    }
-  }
-  if (/^https?:/i.test(url)) { log('Intento cargar de todos modos con la URL original…'); return url; }
-  throw new Error('No encontré el modelo de Teachable Machine en «' + url + '». Para usarlo sin internet, descarga el modelo y ponlo en la carpeta modelo/ (mira el LEEME) y abre la página con Live Server.');
-}
-
-async function iniciarTM() {
-  ficha('fichaVoz', 'txtVoz', 'cargando…', 'espera');
-  if (!reconTM) {
-    decir('Cargando mi modelo de voz. La primera vez puede tardar un poco.');
-    await cargarScript(LIBS.tf);
-    await cargarScript(LIBS.sc);
-    if (typeof speechCommands === 'undefined' || typeof tf === 'undefined') {
-      throw new Error('No cargaron las librerías de Teachable Machine (tfjs / speech-commands).');
-    }
-    log('Motor TensorFlow: ' + tf.getBackend());
-    let url = $('urlModelo').value.trim();
-    if (!url.endsWith('/')) url += '/';
-    url = await elegirUrlTM(url);
-    const r = speechCommands.create('BROWSER_FFT', undefined, url + 'model.json', url + 'metadata.json');
-    const ticker = setInterval(() => log('…sigue cargando el modelo (≈6 MB)'), 8000);
-    try {
-      await conTiempo(r.ensureModelLoaded(), 90000, 'El modelo tardó más de 90 s en cargar');
-    } finally { clearInterval(ticker); }
-    etiquetasTM = r.wordLabels();
-    accionTM = etiquetasTM.map(accionDe);
-    crearBarras();
-    log('Clases: ' + etiquetasTM.join(' | '));
-    if (!accionTM.some(a => a && a.on) || !accionTM.some(a => a && !a.on)) {
-      log('⚠ No encontré clases de encender y apagar. Revisa los nombres de las clases.');
-    }
-    reconTM = r;
-  }
-
-  await reconTM.listen(resultado => {
-    const scores = resultado.scores;
-    const umbral = Number($('umbral').value) / 100;
-    let mejor = 0;
-    scores.forEach((s, i) => {
-      $('v' + i).style.width = (s * 100).toFixed(0) + '%';
-      $('p' + i).textContent = (s * 100).toFixed(0) + '%';
-      if (s > scores[mejor]) mejor = i;
-    });
-    anillo(scores.reduce((m, s, i) => accionTM[i] ? Math.max(m, s) : m, 0));
-    const a = accionTM[mejor];
-    if (!a || scores[mejor] < 0.6) return;   // ruido o intento muy flojo: nada que explicar
-    const pct = (scores[mejor] * 100).toFixed(0);
-    const nombre = '«' + etiquetasTM[mejor] + '» al ' + pct + '%';
-    if (estaSordo()) { informar('Oí ' + nombre + ', pero Lumi estaba hablando.'); return; }
-    if (scores[mejor] < umbral) { informar('Oí ' + nombre + ': menos que tu mínimo de ' + $('umbral').value + '%.'); return; }
-    const ahora = Date.now();
-    if (ahora - (ultimaPorClase[mejor] || 0) < ESPERA_CLASE_MS) return;   // misma frase, ya atendida
-    ultimaPorClase[mejor] = ahora;
-    $('decision').textContent = '';
-    log('Oí ' + nombre);
-    ordenPorVoz(a, etiquetasTM[mejor], pct + '%');
-  }, {
-    includeSpectrogram: false,
-    probabilityThreshold: 0.5,
-    invokeCallbackOnNoiseAndUnknown: true,
-    overlapFactor: 0.5
-  });
-}
-async function pararTM() {
-  try { if (reconTM && reconTM.isListening()) await reconTM.stopListening(); } catch (e) { log('Error al pausar: ' + e.message); }
-}
-
-/* =====================================================
-   MOTOR 3 · NAVEGADOR (Web Speech API, necesita internet)
+   MOTOR 2 · NAVEGADOR (Web Speech API, necesita internet)
    ===================================================== */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let reconWeb = null;
@@ -1166,23 +1027,20 @@ async function pararWeb() {
    ===================================================== */
 const MOTORES = {
   vosk: { nombre: 'Vosk',              iniciar: iniciarVosk, parar: pararVosk },
-  tm:   { nombre: 'Teachable Machine', iniciar: iniciarTM,   parar: pararTM },
   web:  { nombre: 'Navegador',         iniciar: iniciarWeb,  parar: pararWeb }
 };
 const EJEMPLOS = {
   vosk: 'Prueba con <q>Oye Lumi, enciende la cocina</q>, <q>Oye, apaga la sala</q> o <q>Oye Lumi, apaga todo</q>.',
-  tm:   'Prueba con <q>Oye Lumi, enciende la cocina</q> o <q>Oye Lumi, apaga todo</q>.',
   web:  'Prueba con <q>Oye Lumi, enciende la cocina</q>, <q>Lumi, apaga la sala</q>, <q>Lumi, apaga todo</q> o incluso <q>Lumi, lumos máxima</q>.'
 };
 const ANILLO_TXT = ' El anillo muestra qué tan segura estoy de lo que oí; la marca blanca es tu mínimo.';
 const NOTAS = {
   vosk: 'Sin internet: Lumi reconoce tu voz con Vosk dentro de tu computador. Con la lista de frases activada solo busca órdenes como «oye lumi, enciende la cocina» o «oye, apaga todo», y responde sin esperar a que termines de hablar. Con la palabra de activación obligatoria, toda orden debe empezar con «Oye»; así Lumi no confunde su propia voz con una orden. Si «Lumi» está en el vocabulario del modelo (graph/words.txt), marca esa casilla y bastará decir «Lumi, enciende la cocina». La primera vez carga el modelo (tarda); después queda guardado en el navegador.',
-  tm:   'Teachable Machine: cada clase debe incluir «enciende» o «apaga» y la habitación (sala, cocina, cuarto) o la palabra «todo». Las clases de ruido se ignoran. Para usarlo sin internet descarga el modelo y ponlo en la carpeta modelo/.',
   web:  'Navegador: usa el reconocimiento de voz de Chrome o Edge, que envía el audio a la nube, así que necesita internet. Entiende frases libres como «Lumi, por favor prende la luz de la cocina».'
 };
 // Cada modo recuerda su confianza mínima y si exige decir «Lumi»
-const umbralModo = { vosk: 70, tm: 85, web: 60 };
-const wakeModo = { vosk: true, tm: false, web: true };
+const umbralModo = { vosk: 70, web: 60 };
+const wakeModo = { vosk: true, web: true };
 let modo = 'vosk';
 try { const g = localStorage.getItem('lumiModo'); if (MOTORES[g]) modo = g; } catch (e) {}
 
@@ -1275,7 +1133,7 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
 pintarModo();
 if (location.protocol === 'file:') {
   $('aviso').hidden = false;
-  log('⚠ Página abierta como archivo (file://). Para Vosk y el modelo local de Teachable Machine usa Live Server.');
+  log('⚠ Página abierta como archivo (file://). Para Vosk usa Live Server.');
 }
 if (!('serial' in navigator) && !('bluetooth' in navigator)) {
   log('⚠ Este navegador no puede hablar con el Arduino (ni USB ni Bluetooth). Usa Chrome o Edge (en iPhone no es posible).');

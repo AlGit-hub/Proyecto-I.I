@@ -3,26 +3,21 @@ LUMI · luz de casa por voz (versión sin internet)
 
 QUÉ HAY EN ESTA CARPETA
   index.html            La página de Lumi (un solo archivo).
-  lib/                  Librerías guardadas aquí para no depender de internet
-                        (Vosk, TensorFlow y speech-commands).
+  lib/                  Librería de Vosk guardada aquí para no depender de internet.
   fonts/                La tipografía de Lumi.
   modelo-vosk/          AQUÍ va el modelo de voz de Vosk (paso 2).
-  modelo/               AQUÍ va el modelo de Teachable Machine, si quieres
-                        usarlo sin internet (paso 3, opcional).
   arduino/              El sketch Lumi_Arduino.ino (USB y Bluetooth HM-10).
 
-LOS TRES MODOS DE VOZ (se cambian en la página, bajo la burbuja de Lumi)
+LOS DOS MODOS DE VOZ (se cambian en la página, bajo la burbuja de Lumi)
   Sin internet (Vosk)       Reconoce la voz dentro de tu computador. Necesita
                             el modelo de Vosk (paso 2). Es el modo pensado
                             para el proyecto.
-  Teachable Machine         Tu modelo entrenado. Sin internet necesita el
-                            modelo en la carpeta modelo/ (paso 3).
   Navegador (con internet)  Usa el reconocimiento de Chrome o Edge, que manda
                             el audio a la nube. Solo sirve con internet.
 
 
 PASO 1 · ABRIR LA PÁGINA CON LIVE SERVER (obligatorio para Vosk)
-  Vosk y el modelo local de Teachable Machine cargan archivos, y el navegador
+  Vosk carga archivos, y el navegador
   no lo permite si abres el index.html con doble clic. Hay que abrirlo desde
   un servidor local, y en VS Code es muy fácil:
 
@@ -75,15 +70,6 @@ PASO 2 · EL MODELO DE VOZ DE VOSK (una sola vez; esto sí necesita internet)
   Cómo funciona la primera vez: Lumi tarda en cargar el modelo (decenas de
   segundos). Después el navegador lo guarda y las siguientes veces carga rápido.
   Si borras los datos del navegador, la próxima vez vuelve a tardar.
-
-
-PASO 3 · MODELO DE TEACHABLE MACHINE SIN INTERNET (opcional)
-  1. En Teachable Machine abre tu proyecto de audio > Exportar modelo >
-     pestaña «Tensorflow.js» > «Descargar mi modelo».
-  2. Descomprime el .zip: salen model.json, metadata.json y weights.bin.
-  3. Copia esos tres archivos dentro de la carpeta  modelo/  de Lumi.
-  Si la carpeta modelo/ está vacía y hay internet, Lumi usa el modelo en
-  línea (LfL5sSgUa) como respaldo.
 
 
 CÓMO USARLO
