@@ -282,6 +282,149 @@
     .btn, .modo, .ficha, .burbuja, details.ajustes, .controles { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; background-color: #161F42; }
   }
 .btn[hidden]{display:none}
+
+/* =====================================================
+   ACABADO ELEGANTE · «Atardecer en casa»
+   Capa de estilo: solo cambia el aspecto, no la lógica.
+   Serifa cálida para lo emotivo, sans limpia para lo funcional,
+   luz ámbar suave, mucho aire y movimiento lento.
+   ===================================================== */
+:root {
+  --noche:  #0B0E1A;
+  --noche2: #131728;
+  --muro:   #2A3050;
+  --niebla: #F1EBDD;
+  --tenue:  #9A9AB0;
+  --luz:    #F2C36B;
+  --luz2:   #E08E45;
+  --ok:     #8FD3B0;
+  --err:    #E59A9A;
+  --serif:  "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --vidrio: linear-gradient(160deg, rgba(255,244,220,.08), rgba(255,244,220,.02) 55%, rgba(255,244,220,.05));
+  --borde-vidrio: rgba(255,236,200,.13);
+  --brillo: inset 0 1px 0 rgba(255,244,220,.16), 0 10px 30px rgba(0,0,0,.35);
+}
+body {
+  letter-spacing: .005em;
+  background:
+    radial-gradient(900px 560px at 50% 118%, rgba(242,195,107, calc(var(--amb) * .24)), transparent 68%),
+    radial-gradient(700px 420px at 12% -8%, rgba(224,142,69, calc(.06 + var(--amb) * .05)), transparent 62%),
+    radial-gradient(800px 500px at 100% 0%, rgba(90,100,170,.10), transparent 60%),
+    var(--noche);
+  background-attachment: fixed;
+}
+/* grano muy sutil: da textura de papel, quita lo «plástico» */
+body::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .035; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.pagina { position: relative; z-index: 1; max-width: 1080px; padding-top: 40px; }
+
+/* Encabezado: marca serena, con una línea de luz */
+.cabecera { padding-bottom: 22px; margin-bottom: 40px; border-bottom: 1px solid rgba(255,236,200,.08); }
+.marca h1 {
+  font-family: var(--serif); font-weight: 400; font-size: 2.6rem; letter-spacing: .01em;
+  background: linear-gradient(180deg, #FFF3D6, var(--luz) 90%); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.marca p { font-family: var(--serif); font-style: italic; font-size: 1.05rem; color: var(--tenue); }
+.ficha { font-size: .8rem; letter-spacing: .04em; border-radius: 99px; padding: 6px 14px; box-shadow: none; }
+.ficha b { font-weight: 600; color: var(--niebla); }
+.ficha i { box-shadow: 0 0 8px currentColor; }
+.ficha.ok i { color: var(--ok); } .ficha.espera i { color: var(--luz); }
+
+/* Lumi: un orbe como una lámpara de papel, que respira despacio */
+.escena { gap: 56px; grid-template-columns: minmax(280px, 340px) 1fr; }
+.lumi { gap: 22px; }
+.orbe {
+  background: radial-gradient(circle at 38% 32%, #FFF8E6 0%, #F7D58A 40%, var(--luz2) 100%);
+  box-shadow: 0 0 80px rgba(242,195,107,.40), 0 0 200px rgba(224,142,69,.18);
+}
+.orbe[data-estado="escucha"] { animation-duration: 5.5s; }
+.anillo .pista { stroke: rgba(255,236,200,.12); stroke-width: 2; opacity: 1; }
+.anillo .prog { stroke-width: 2.5; stroke-linecap: round; }
+.anillo .marca { stroke-width: 2; opacity: .8; }
+.burbuja {
+  font-family: var(--serif); font-weight: 400; font-size: 1.35rem; line-height: 1.45; letter-spacing: 0;
+  padding: 22px 24px; border-radius: 6px 26px 26px 26px;
+  background: var(--vidrio), rgba(19,23,40,.6); border-color: var(--borde-vidrio);
+}
+.escuche { font-size: .88rem; }
+.decision { color: var(--luz); font-size: .88rem; }
+.ejemplo { font-size: .88rem; line-height: 1.65; }
+.ejemplo q { font-family: var(--serif); font-style: italic; color: var(--niebla); }
+.modos-caja > span { text-transform: uppercase; letter-spacing: .14em; font-size: .68rem; }
+.modo { font-weight: 500; font-size: .82rem; padding: 8px 14px; }
+
+/* Plano: la casa vista como maqueta, con luz que se derrama */
+.plano {
+  gap: 10px; padding: 10px; background: rgba(255,236,200,.06);
+  border: 1px solid rgba(255,236,200,.10); border-radius: 30px; min-height: 440px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,244,220,.08);
+}
+.hab { background: linear-gradient(180deg, #10142A, #0B0E1E); transition: background .8s ease, box-shadow .8s ease; padding: 22px 24px; }
+.hab[data-hab="sala"]   { border-radius: 22px 6px 6px 22px; }
+.hab[data-hab="cocina"] { border-radius: 6px 22px 6px 6px; }
+.hab[data-hab="cuarto"] { border-radius: 6px 6px 22px 6px; }
+.hab:hover { background: linear-gradient(180deg, #161B36, #0E1226); }
+.hab[aria-pressed="true"] {
+  background: radial-gradient(circle at 50% 38%, rgba(242,195,107,.30), rgba(224,142,69,.08) 62%, #0B0E1E 100%);
+  box-shadow: inset 0 0 60px rgba(242,195,107,.10);
+}
+.lampara { border-color: rgba(255,236,200,.18); }
+.lampara::after { background: rgba(255,236,200,.18); }
+.hab[aria-pressed="true"] .lampara { box-shadow: 0 0 110px 44px rgba(242,195,107,.34); }
+.hab .nombre { font-family: var(--serif); font-weight: 400; font-size: 1.9rem; letter-spacing: .005em; }
+.hab .estado { font-size: .85rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; }
+.hab .pin { font-size: .74rem; letter-spacing: .06em; opacity: .75; }
+
+/* Controles: discretos, con un solo gesto dorado */
+.controles { margin-top: 40px; gap: 12px; justify-content: center; }
+.btn { font-weight: 500; letter-spacing: .03em; padding: 12px 22px; border-radius: 99px; }
+.btn.principal, .controles .btn.principal {
+  background: var(--vidrio), rgba(19,23,40,.5); color: var(--niebla);
+  border-color: rgba(242,195,107,.35);
+  box-shadow: var(--brillo);
+}
+.btn.principal:hover:not(:disabled) { background: var(--vidrio), rgba(242,195,107,.14); border-color: rgba(242,195,107,.6); }
+.btn.escucha.principal[aria-pressed="true"], .controles .btn.escucha[aria-pressed="true"] {
+  background: linear-gradient(165deg, #F7D58A, #E7A24F); color: #1B1426; border-color: rgba(255,240,200,.6);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 10px 34px rgba(242,170,70,.30);
+}
+.btn.arduino[aria-pressed="true"], .controles .btn.arduino[aria-pressed="true"] {
+  background: linear-gradient(165deg, #A9E2C3, #6FBF98); color: #0B2419; border-color: rgba(220,255,240,.6);
+}
+.modo[aria-pressed="true"], .modo[aria-pressed="true"]:hover:not(:disabled) {
+  background: linear-gradient(165deg, #F7D58A, #E7A24F); color: #1B1426; border-color: rgba(255,240,200,.6);
+}
+
+/* Ajustes: tranquilos, al fondo */
+details.ajustes { margin-top: 44px; border-radius: 22px; background: rgba(19,23,40,.5); }
+details.ajustes summary { font-weight: 500; letter-spacing: .04em; color: var(--tenue); padding: 16px 22px; }
+details.ajustes[open] summary { color: var(--niebla); }
+#log { background: #080B16; border: 1px solid rgba(255,236,200,.06); }
+input[type=text], select { background: #0A0D1B; border-color: rgba(255,236,200,.14); border-radius: 12px; }
+
+/* Aparición suave al abrir la página */
+@keyframes aparece { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.cabecera, .lumi, .plano, .controles, details.ajustes { animation: aparece .9s cubic-bezier(.2,.7,.2,1) both; }
+.lumi { animation-delay: .1s; } .plano { animation-delay: .2s; } .controles { animation-delay: .3s; } details.ajustes { animation-delay: .4s; }
+
+@media (max-width: 860px) {
+  .pagina { padding-top: 18px; }
+  .cabecera { margin-bottom: 14px; padding-bottom: 12px; }
+  .marca h1 { font-size: 1.9rem; }
+  .escena { gap: 14px; }
+  .lumi .burbuja { font-size: 1.05rem; padding: 14px 16px; border-radius: 6px 20px 20px 20px; }
+  .plano { border-radius: 24px; padding: 8px; gap: 8px; }
+  .hab .nombre { font-size: 1.3rem; }
+  .hab .estado { font-size: .7rem; }
+  .controles { justify-content: space-between; margin-top: 0; animation: none; }
+  .controles .btn { border-radius: 19px; padding: 8px 2px; letter-spacing: 0; }
+  .controles .btn.principal { border-color: var(--borde-vidrio); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cabecera, .lumi, .plano, .controles, details.ajustes { animation: none !important; }
+}
 </style>
 </head>
 <body>
