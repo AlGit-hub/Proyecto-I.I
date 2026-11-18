@@ -107,10 +107,10 @@
 
   /* ---------- Plano de la casa ---------- */
   .plano {
-    display: grid; grid-template-columns: 1.35fr 1fr; grid-template-rows: 1fr 1fr;
+    display: grid; grid-template-columns: 1.35fr 1fr; grid-template-rows: 1fr 1fr 1fr;
     gap: 6px; padding: 6px; background: var(--muro);
     border-radius: 22px; min-height: 400px;
-    grid-template-areas: "sala cocina" "sala cuarto";
+    grid-template-areas: "sala cocina" "sala cuarto" "sala bano";
   }
   .hab {
     position: relative; overflow: hidden; border: 0; cursor: pointer; text-align: left;
@@ -120,7 +120,8 @@
   }
   .hab[data-hab="sala"] { grid-area: sala; border-radius: 16px 4px 4px 16px; }
   .hab[data-hab="cocina"] { grid-area: cocina; border-radius: 4px 16px 4px 4px; }
-  .hab[data-hab="cuarto"] { grid-area: cuarto; border-radius: 4px 4px 16px 4px; }
+  .hab[data-hab="cuarto"] { grid-area: cuarto; border-radius: 4px; }
+  .hab[data-hab="bano"] { grid-area: bano; border-radius: 4px 4px 16px 4px; }
   .hab:hover { background: #0D1534; }
   .hab[aria-pressed="true"] { background: radial-gradient(circle at 50% 42%, rgba(255,200,87,.26), rgba(255,159,67,.07) 60%, #0A1028 100%); }
 
@@ -248,7 +249,7 @@
   details.ajustes { border-color: var(--borde-vidrio); box-shadow: var(--brillo); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 
   @media (max-width: 860px) {
-    /* Más compacto: que el plano completo (sala, cocina y cuarto) quepa en pantalla */
+    /* Más compacto: que el plano completo (sala, cocina, cuarto y baño) quepa en pantalla */
     .pagina { padding-top: 10px; }
     .marca h1 { font-size: 1.6rem; }
     .marca p { display: none; }
@@ -260,7 +261,7 @@
     .lumi .ejemplo { display: none; }
     .lumi .modos-caja > span { display: none; }
     .modo { padding: 6px 11px; font-size: .8rem; }
-    .plano { min-height: 0; height: clamp(250px, 40svh, 360px); }
+    .plano { min-height: 0; height: clamp(290px, 46svh, 420px); }
     .lampara { top: 28%; width: 34px; height: 34px; }
     .hab { padding: 10px 12px; }
     .hab .nombre { font-size: 1.15rem; }
@@ -364,7 +365,8 @@ body::after {
 .hab { background: linear-gradient(180deg, #10142A, #0B0E1E); transition: background .8s ease, box-shadow .8s ease; padding: 22px 24px; }
 .hab[data-hab="sala"]   { border-radius: 22px 6px 6px 22px; }
 .hab[data-hab="cocina"] { border-radius: 6px 22px 6px 6px; }
-.hab[data-hab="cuarto"] { border-radius: 6px 6px 22px 6px; }
+.hab[data-hab="cuarto"] { border-radius: 6px; }
+.hab[data-hab="bano"]   { border-radius: 6px 6px 22px 6px; }
 .hab:hover { background: linear-gradient(180deg, #161B36, #0E1226); }
 .hab[aria-pressed="true"] {
   background: radial-gradient(circle at 50% 38%, rgba(242,195,107,.30), rgba(224,142,69,.08) 62%, #0B0E1E 100%);
@@ -413,11 +415,13 @@ input[type=text], select { background: #0A0D1B; border-color: rgba(255,236,200,.
   .pagina { padding-top: 18px; }
   .cabecera { margin-bottom: 14px; padding-bottom: 12px; }
   .marca h1 { font-size: 1.9rem; }
-  .escena { gap: 14px; }
+  .escena { gap: 14px; grid-template-columns: 1fr; }
   .lumi .burbuja { font-size: 1.05rem; padding: 14px 16px; border-radius: 6px 20px 20px 20px; }
-  .plano { border-radius: 24px; padding: 8px; gap: 8px; }
+  .plano { border-radius: 24px; padding: 8px; gap: 8px; min-height: 0; }
   .hab .nombre { font-size: 1.3rem; }
   .hab .estado { font-size: .7rem; }
+  .hab .pin { display: none; }
+  .lampara { top: 27%; width: 30px; height: 30px; }
   .controles { justify-content: space-between; margin-top: 0; animation: none; }
   .controles .btn { border-radius: 19px; padding: 8px 2px; letter-spacing: 0; }
   .controles .btn.principal { border-color: var(--borde-vidrio); }
@@ -592,9 +596,10 @@ function cargarScript(rutas) {
 const HABITACIONES = {
   sala:   { on: 'S', off: 's', pin: 'D4', articulo: 'la sala' },
   cocina: { on: 'C', off: 'c', pin: 'D5', articulo: 'la cocina' },
-  cuarto: { on: 'Q', off: 'q', pin: 'D6', articulo: 'el cuarto' }
+  cuarto: { on: 'Q', off: 'q', pin: 'D6', articulo: 'el cuarto' },
+  bano:   { on: 'B', off: 'b', pin: 'D7', articulo: 'el baño', nombre: 'Baño' }
 };
-const estadoLuz = { sala: false, cocina: false, cuarto: false };
+const estadoLuz = { sala: false, cocina: false, cuarto: false, bano: false };
 
 function crearPlano() {
   $('plano').innerHTML = '';
@@ -605,7 +610,7 @@ function crearPlano() {
     b.setAttribute('aria-pressed', 'false');
     b.innerHTML =
       '<span class="lampara" aria-hidden="true"></span>' +
-      '<span class="nombre">' + h + '</span>' +
+      '<span class="nombre">' + (HABITACIONES[h].nombre || h) + '</span>' +
       '<span class="estado" id="e-' + h + '">Apagada</span>' +
       '<span class="pin">LED en ' + HABITACIONES[h].pin + '</span>';
     b.onclick = () => enviar(!estadoLuz[h], h);   // botón: sin respuesta de Lumi
@@ -794,7 +799,7 @@ async function desconectarArduino() {
 }
 
 // Cambia la luz en pantalla y la envía al Arduino. Devuelve true si llegó al Arduino.
-// hab: 'sala' | 'cocina' | 'cuarto' | 'todas'
+// hab: 'sala' | 'cocina' | 'cuarto' | 'bano' | 'todas'
 async function enviar(on, hab) {
   pintarLuz(hab, on);
   const verbo = on ? 'ENCENDER' : 'APAGAR';
@@ -908,8 +913,9 @@ function interpretarComando(textoCrudo) {
   if (/\b(sala|salon|living|estancia)\b/.test(t)) hab = 'sala';
   else if (/\b(cocina)\b/.test(t)) hab = 'cocina';
   else if (/\b(cuarto|habitacion|pieza|dormitorio|alcoba)\b/.test(t)) hab = 'cuarto';
+  else if (/\b(bano|banos|aseo|sanitario|wc)\b/.test(t)) hab = 'bano';
   else if (/\b(todo|toda|todas|todos|casa|luces)\b/.test(t)) hab = 'todas';
-  if (!hab) return { ignorado: true, razon: 'No mencionaste qué lugar (sala, cocina, cuarto o todo).' };
+  if (!hab) return { ignorado: true, razon: 'No mencionaste qué lugar (sala, cocina, cuarto, baño o todo).' };
 
   return { on, hab };
 }
@@ -966,7 +972,7 @@ function procesarTexto(texto, conf, parcial) {
 // Lista cerrada de frases: Vosk solo elige entre estas (o «[unk]» si no reconoce nada).
 // Si alguna palabra (por ejemplo «lumi») no está en el vocabulario del modelo, Vosk la ignora sin fallar.
 const VERBOS_V = ['enciende', 'prende', 'apaga'];
-const LUGARES_V = ['la sala', 'la cocina', 'el cuarto', 'todo', 'todas las luces', 'la luz de la sala', 'la luz de la cocina', 'la luz del cuarto'];
+const LUGARES_V = ['la sala', 'la cocina', 'el cuarto', 'el baño', 'todo', 'todas las luces', 'la luz de la sala', 'la luz de la cocina', 'la luz del cuarto', 'la luz del baño'];
 let FRASES_VOSK = new Set();
 let GRAMATICA_VOSK = '';
 // Con la palabra de activación obligatoria, TODAS las frases empiezan por «oye»: así la voz de Lumi
