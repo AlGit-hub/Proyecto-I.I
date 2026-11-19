@@ -10,7 +10,7 @@
     LED cocina -> D5
     LED cuarto -> D6
     LED baño   -> D7
-    HM-10: TX -> D10,  RX -> D11 (con divisor de voltaje), VCC -> 5V, GND -> GND
+    HM-10: TX -> D2,  RX -> D3 (con divisor de voltaje), VCC -> 5V, GND -> GND
 */
 
 #include <SoftwareSerial.h>
@@ -20,8 +20,8 @@ const int PIN_COCINA = 5;
 const int PIN_CUARTO = 6;
 const int PIN_BANO   = 7;
 
-const int BT_RX = 10;   // recibe desde el TX del HM-10
-const int BT_TX = 11;   // envía al RX del HM-10
+const int BT_RX = 2;    // recibe desde el TX del HM-10
+const int BT_TX = 3;    // envía al RX del HM-10
 SoftwareSerial bluetooth(BT_RX, BT_TX);
 
 void setup() {
