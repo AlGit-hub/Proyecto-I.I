@@ -35,9 +35,22 @@ void setup() {
   bluetooth.begin(9600);   // HM-10
 }
 
+// El HM-10 avisa por su cuenta «OK+CONN» al conectarse y «OK+LOST» al desconectarse.
+// Esas letras (C, S...) se confundirían con órdenes, así que se descartan.
+int saltar = 0;          // letras que faltan por descartar tras «OK+»
+int pasoAviso = 0;       // 0 = nada, 1 = vimos «O», 2 = vimos «OK»
+
 void loop() {
   while (Serial.available())    atender(Serial.read());
-  while (bluetooth.available()) atender(bluetooth.read());
+  while (bluetooth.available()) atenderBluetooth(bluetooth.read());
+}
+
+void atenderBluetooth(char c) {
+  if (saltar > 0) { saltar--; return; }
+  if (pasoAviso == 0 && c == 'O') { pasoAviso = 1; return; }
+  if (pasoAviso == 1) { pasoAviso = (c == 'K') ? 2 : 0; if (pasoAviso == 2) return; }
+  if (pasoAviso == 2) { pasoAviso = 0; if (c == '+') { saltar = 4; return; } }
+  atender(c);
 }
 
 void atender(char c) {
