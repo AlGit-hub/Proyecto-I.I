@@ -1,6 +1,6 @@
 /* Lumi · service worker: guarda la página y las librerías para abrirla sin internet.
    El modelo de Vosk NO se guarda aquí: Vosk ya lo guarda solo en el navegador. */
-const VERSION = 'lumi-v5';
+const VERSION = 'lumi-v6';
 const BASE = [
   './', './index.html', './manifest.webmanifest',
   './lib/vosk.js',

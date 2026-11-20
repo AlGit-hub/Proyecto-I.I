@@ -406,6 +406,29 @@ details.ajustes[open] summary { color: var(--niebla); }
 #log { background: #080B16; border: 1px solid rgba(255,236,200,.06); }
 input[type=text], select { background: #0A0D1B; border-color: rgba(255,236,200,.14); border-radius: 12px; }
 
+/* Orbe en duda: no entendí / no estoy segura */
+.orbe[data-estado="duda"] { animation: duda .5s ease-in-out 2; filter: saturate(.7) hue-rotate(-18deg); }
+@keyframes duda { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.hab .estado small { text-transform: none; letter-spacing: .02em; font-weight: 400; opacity: .8; }
+.ficha.red-off i { background: var(--err); }
+
+/* Paneles nuevos: ayuda, historial y pruebas */
+details.panel { margin-top: 18px; border: 1px solid var(--borde-vidrio); border-radius: 22px; background: rgba(19,23,40,.5); }
+details.panel summary { cursor: pointer; padding: 16px 22px; font-weight: 500; letter-spacing: .04em; color: var(--tenue); list-style: none; }
+details.panel summary::-webkit-details-marker { display: none; }
+details.panel summary::before { content: "▸"; display: inline-block; margin-right: 10px; transition: transform .2s; }
+details.panel[open] summary { color: var(--niebla); }
+details.panel[open] summary::before { transform: rotate(90deg); }
+.panel-cuerpo { padding: 2px 22px 20px; font-size: .92rem; line-height: 1.55; color: var(--niebla); }
+.panel-cuerpo ol { margin: 0 0 10px; padding-left: 20px; }
+.panel-cuerpo q { font-family: var(--serif); font-style: italic; quotes: "«" "»"; }
+table.tabla { width: 100%; border-collapse: collapse; font-size: .82rem; margin-top: 10px; }
+table.tabla th, table.tabla td { text-align: left; padding: 6px 8px; border-bottom: 1px solid rgba(255,236,200,.08); }
+table.tabla th { color: var(--tenue); font-weight: 500; }
+.res-ok { color: var(--ok); } .res-mal { color: var(--err); } .res-med { color: var(--luz); }
+.fila-prueba { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
+.btn.chico { padding: 7px 14px; font-size: .82rem; }
+
 /* Aparición suave al abrir la página */
 @keyframes aparece { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .cabecera, .lumi, .plano, .controles, details.ajustes { animation: aparece .9s cubic-bezier(.2,.7,.2,1) both; }
@@ -442,6 +465,7 @@ input[type=text], select { background: #0A0D1B; border-color: rgba(255,236,200,.
     <div class="estados" aria-live="polite">
       <span class="ficha" id="fichaArduino"><i></i><b>Arduino</b> <span id="txtArduino">sin conectar</span></span>
       <span class="ficha" id="fichaVoz"><i></i><b>Voz</b> <span id="txtVoz">sin activar</span></span>
+      <span class="ficha ok" id="fichaRed"><i></i><b>Internet</b> <span id="txtRed">sí</span></span>
     </div>
   </header>
 
@@ -486,6 +510,47 @@ input[type=text], select { background: #0A0D1B; border-color: rgba(255,236,200,.
       <button class="btn" id="btnOn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span class="txt">Encender todas</span><span class="corto">Encender</span></button>
       <button class="btn" id="btnOff"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span class="txt">Apagar todas</span><span class="corto">Apagar</span></button>
     </div>
+
+    <details class="panel" id="ayuda">
+      <summary>Cómo usar a Lumi</summary>
+      <div class="panel-cuerpo">
+        <ol>
+          <li>Conecta el Arduino: <b>Arduino</b> (cable USB) o <b>Bluetooth</b> (módulo HM-10, Chrome en Android). Verás el estado real de cada luz en el plano.</li>
+          <li>Elige cómo te escucha: <b>Sin internet (Vosk)</b> o <b>Navegador</b> (necesita internet).</li>
+          <li>Pulsa <b>Activar a Lumi</b> y permite el micrófono.</li>
+          <li>Habla: <q>Oye Lumi, enciende la cocina</q>, <q>Oye, apaga la sala</q>, <q>Oye Lumi, apaga todo</q>.</li>
+        </ol>
+        <p class="nota">Los botones del plano y del dock siempre funcionan, aunque la voz falle. Si el anillo no llega a la marca blanca, Lumi no ejecuta la orden: repítela más despacio o baja la confianza mínima en Ajustes.</p>
+      </div>
+    </details>
+
+    <details class="panel" id="panelHistorial">
+      <summary>Últimas órdenes</summary>
+      <div class="panel-cuerpo">
+        <table class="tabla" aria-label="Últimas órdenes">
+          <thead><tr><th>Hora</th><th>Origen</th><th>Orden</th><th>Resultado</th></tr></thead>
+          <tbody id="histCuerpo"></tbody>
+        </table>
+        <p class="nota" id="histVacio">Aún no hay órdenes.</p>
+      </div>
+    </details>
+
+    <details class="panel" id="panelPruebas">
+      <summary>Modo de pruebas (para el informe)</summary>
+      <div class="panel-cuerpo">
+        <p class="nota" style="margin-top:0">Elige la orden que vas a decir y actívalo. Cada intento de voz cuenta como acierto si Lumi entendió justo esa orden, y como fallo si entendió otra, no llegó a la confianza mínima o no reconoció nada. Espera unos 3 segundos entre intentos (Lumi ignora la misma orden repetida antes de 2 s). Los resultados quedan guardados por modo de voz.</p>
+        <div class="fila-prueba">
+          <label class="fila"><input type="checkbox" id="chkPrueba"><span class="txt-check">Activar modo de pruebas</span></label>
+          <select id="selObjetivo" aria-label="Orden que voy a probar"></select>
+          <button class="btn chico" id="btnCsv" type="button">Descargar CSV</button>
+          <button class="btn chico" id="btnBorrarPruebas" type="button">Borrar resultados</button>
+        </div>
+        <table class="tabla" aria-label="Resultados de pruebas">
+          <thead><tr><th>Modo</th><th>Orden</th><th>Intentos</th><th>Aciertos</th><th>% acierto</th></tr></thead>
+          <tbody id="pruebaCuerpo"></tbody>
+        </table>
+      </div>
+    </details>
 
     <details class="ajustes">
       <summary>Ajustes y registro</summary>
@@ -613,19 +678,22 @@ function crearPlano() {
       '<span class="nombre">' + (HABITACIONES[h].nombre || h) + '</span>' +
       '<span class="estado" id="e-' + h + '">Apagada</span>' +
       '<span class="pin">LED en ' + HABITACIONES[h].pin + '</span>';
-    b.onclick = () => enviar(!estadoLuz[h], h);   // botón: sin respuesta de Lumi
+    b.onclick = () => ordenManual(!estadoLuz[h], h);   // botón: sin respuesta de Lumi
     $('plano').appendChild(b);
   });
 }
 crearPlano();
 
-function pintarLuz(hab, on) {
+// nota: '' = confirmado por el Arduino · 'esperando' · 'simulada' (Arduino no conectado)
+function pintarLuz(hab, on, nota) {
   const lista = hab === 'todas' ? Object.keys(HABITACIONES) : [hab];
   lista.forEach(h => {
     estadoLuz[h] = on;
     const btn = document.querySelector('.hab[data-hab="' + h + '"]');
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    $('e-' + h).textContent = on ? 'Encendida' : 'Apagada';
+    const nombre = HABITACIONES[h].nombre || h;
+    btn.setAttribute('aria-label', nombre + ': ' + (on ? 'encendida' : 'apagada') + (nota ? ' (' + nota + ')' : '') + '. Pulsa para ' + (on ? 'apagar' : 'encender') + '.');
+    $('e-' + h).innerHTML = (on ? 'Encendida' : 'Apagada') + (nota ? ' <small>· ' + nota + '</small>' : '');
   });
   const n = Object.values(estadoLuz).filter(Boolean).length;
   document.body.style.setProperty('--amb', n / Object.keys(HABITACIONES).length);
@@ -780,6 +848,8 @@ async function conectarArduino() {
     etiquetaBtn('btnArduino', 'Desconectar Arduino', 'Desconectar', true);
     log('Arduino listo.');
     decir('Arduino conectado. Ya puedo encender las luces de verdad.');
+    iniciarLectura();
+    consultarEstado();
   } catch (e) {
     log('No se pudo conectar: ' + e.message);
     ficha('fichaArduino', 'txtArduino', 'sin conectar', '');
@@ -789,10 +859,12 @@ async function conectarArduino() {
 
 async function desconectarArduino() {
   try {
+    await pararLectura();
     if (escritor) escritor.releaseLock();
     if (puerto) await puerto.close();
   } catch (e) { log('Error al cerrar: ' + e.message); }
   puerto = null; escritor = null;
+  firmwareConfirma = null;
   ficha('fichaArduino', 'txtArduino', 'sin conectar', '');
   etiquetaBtn('btnArduino', 'Conectar Arduino', 'Arduino', false);
   log('Arduino desconectado.');
@@ -800,31 +872,213 @@ async function desconectarArduino() {
 
 // Cambia la luz en pantalla y la envía al Arduino. Devuelve true si llegó al Arduino.
 // hab: 'sala' | 'cocina' | 'cuarto' | 'bano' | 'todas'
-async function enviar(on, hab) {
-  pintarLuz(hab, on);
-  const verbo = on ? 'ENCENDER' : 'APAGAR';
-  if (!escritor && !bleChar) { log(verbo + ' ' + hab + ' (solo en pantalla: Arduino no conectado)'); return false; }
-  const caracter = hab === 'todas' ? (on ? '1' : '0') : HABITACIONES[hab][on ? 'on' : 'off'];
-  try {
-    const bytes = new TextEncoder().encode(caracter);
-    if (bleChar) {
-      if (bleChar.writeValueWithoutResponse) await bleChar.writeValueWithoutResponse(bytes);
-      else await bleChar.writeValue(bytes);
-    } else {
-      await escritor.write(bytes);
+/* ---- Confirmación real desde el Arduino ----
+   El sketch responde con una línea por habitación: S1, s... (letra en mayúscula + 1 o 0):
+   S=sala, C=cocina, Q=cuarto, B=baño. La página pinta lo que el Arduino dice, no lo que ella supone. */
+const LETRA_HAB = { S: 'sala', C: 'cocina', Q: 'cuarto', B: 'bano' };
+const confHora = {};            // última hora en que el Arduino confirmó cada habitación
+let firmwareConfirma = null;    // null = aún no sé · true = el sketch responde · false = sketch antiguo (no responde)
+let bufferEntrada = '';
+let lector = null, lecturaActiva = null;
+const hayArduino = () => !!(escritor || bleChar);
+
+function alLlegarDatos(texto) {
+  bufferEntrada += texto;
+  let i;
+  while ((i = bufferEntrada.search(/[\r\n]/)) >= 0) {
+    const linea = bufferEntrada.slice(0, i).trim();
+    bufferEntrada = bufferEntrada.slice(i + 1);
+    const m = /^([SCQB])([01])$/.exec(linea);
+    if (!m) { if (linea) log('Arduino dice: ' + linea); continue; }
+    const hab = LETRA_HAB[m[1]], on = m[2] === '1';
+    firmwareConfirma = true;
+    confHora[hab] = Date.now();
+    if (estadoLuz[hab] !== on) log('El Arduino dice que ' + hab + ' está ' + (on ? 'encendida' : 'apagada') + ': sincronizo la pantalla.');
+    pintarLuz(hab, on, '');
+  }
+}
+async function iniciarLectura() {
+  if (!puerto || !puerto.readable || lector) return;
+  const dec = new TextDecoder();
+  lector = puerto.readable.getReader();
+  const miLector = lector;
+  lecturaActiva = (async () => {
+    try {
+      while (true) {
+        const { value, done } = await miLector.read();
+        if (done) break;
+        if (value) alLlegarDatos(dec.decode(value, { stream: true }));
+      }
+    } catch (e) { log('Lectura del Arduino detenida: ' + e.message); }
+  })();
+}
+async function pararLectura() {
+  try { if (lector) await lector.cancel(); } catch (e) {}
+  try { if (lecturaActiva) await lecturaActiva; } catch (e) {}
+  try { if (lector) lector.releaseLock(); } catch (e) {}
+  lector = null; lecturaActiva = null; bufferEntrada = '';
+}
+async function escribirAlArduino(caracter) {
+  const bytes = new TextEncoder().encode(caracter);
+  if (bleChar) {
+    if (bleChar.writeValueWithoutResponse) await bleChar.writeValueWithoutResponse(bytes);
+    else await bleChar.writeValue(bytes);
+  } else {
+    await escritor.write(bytes);
+  }
+}
+// Al conectar: pregunta cómo están las luces para arrancar con el estado verdadero
+async function consultarEstado() {
+  firmwareConfirma = null;
+  try { await escribirAlArduino('?'); } catch (e) { log('No pude consultar el estado: ' + e.message); return; }
+  setTimeout(() => {
+    if (firmwareConfirma === null && hayArduino()) {
+      firmwareConfirma = false;
+      log('⚠ El Arduino no responde a la consulta de estado. Probablemente tiene el sketch antiguo: carga Lumi_Arduino.ino nuevo para ver el estado real de las luces.');
     }
+  }, 1800);
+}
+// Espera (máx. ms) a que el Arduino confirme las habitaciones afectadas desde el instante t0
+function esperarConfirmacion(hab, t0, ms) {
+  const lista = hab === 'todas' ? Object.keys(HABITACIONES) : [hab];
+  return new Promise(res => {
+    const fin = Date.now() + ms;
+    const t = setInterval(() => {
+      if (lista.every(h => (confHora[h] || 0) >= t0)) { clearInterval(t); res(true); }
+      else if (Date.now() > fin) { clearInterval(t); res(false); }
+    }, 40);
+  });
+}
+
+// Cambia la luz en pantalla y la envía al Arduino.
+// Devuelve 'confirmado' | 'sin-confirmar' | 'enviado' (sketch antiguo) | 'pantalla' (sin Arduino) | 'error'
+async function enviar(on, hab) {
+  const verbo = on ? 'ENCENDER' : 'APAGAR';
+  if (!hayArduino()) {
+    pintarLuz(hab, on, 'simulada');
+    log(verbo + ' ' + hab + ' (solo en pantalla: Arduino no conectado)');
+    return 'pantalla';
+  }
+  pintarLuz(hab, on, 'esperando');
+  const caracter = hab === 'todas' ? (on ? '1' : '0') : HABITACIONES[hab][on ? 'on' : 'off'];
+  const t0 = Date.now();
+  try {
+    await escribirAlArduino(caracter);
     log(verbo + ' ' + hab + ' → enviado «' + caracter + '»');
-    return true;
   } catch (e) {
     log('Error al enviar: ' + e.message);
-    return false;
+    pintarLuz(hab, !on, 'sin cambio');
+    return 'error';
   }
+  if (firmwareConfirma === false) { pintarLuz(hab, on, 'sin confirmación'); return 'enviado'; }
+  const ok = await esperarConfirmacion(hab, t0, 1500);
+  if (ok) { log('Confirmado por el Arduino: ' + hab); return 'confirmado'; }
+  if (firmwareConfirma === null) firmwareConfirma = false;   // nunca respondió: sketch antiguo
+  pintarLuz(hab, on, 'sin confirmar');
+  log('⚠ El Arduino no confirmó «' + hab + '». Revisa la conexión o carga el sketch nuevo.');
+  return 'sin-confirmar';
 }
 
 /* =====================================================
    ARDUINO por Bluetooth (módulo HM-10, BLE) con Web Bluetooth
    Funciona en Chrome de Android y en Chrome/Edge de escritorio (no en iPhone).
    ===================================================== */
+/* =====================================================
+   HISTORIAL DE ÓRDENES
+   ===================================================== */
+const historial = [];
+const RES_TXT = {
+  'confirmado':    ['Confirmado por el Arduino', 'res-ok'],
+  'sin-confirmar': ['Sin confirmar', 'res-mal'],
+  'enviado':       ['Enviado (sin confirmación)', 'res-med'],
+  'pantalla':      ['Solo en pantalla', 'res-med'],
+  'error':         ['Error al enviar', 'res-mal']
+};
+function nombreOrden(on, hab) {
+  return (on ? 'Encender ' : 'Apagar ') + (hab === 'todas' ? 'todas' : HABITACIONES[hab].articulo);
+}
+function registrarOrden(origen, on, hab, resultado, oido) {
+  historial.unshift({ hora: new Date().toLocaleTimeString(), origen, orden: nombreOrden(on, hab), oido: oido || '', resultado });
+  if (historial.length > 10) historial.pop();
+  const cuerpo = $('histCuerpo');
+  cuerpo.innerHTML = '';
+  historial.forEach(h => {
+    const tr = document.createElement('tr');
+    const r = RES_TXT[h.resultado] || [h.resultado, ''];
+    [h.hora, h.origen, h.orden + (h.oido ? ' · oí «' + h.oido + '»' : ''), r[0]].forEach((t, i) => {
+      const td = document.createElement('td');
+      td.textContent = t;
+      if (i === 3 && r[1]) td.className = r[1];
+      tr.appendChild(td);
+    });
+    cuerpo.appendChild(tr);
+  });
+  $('histVacio').hidden = true;
+}
+async function ordenManual(on, hab) {
+  const r = await enviar(on, hab);
+  registrarOrden('Botón', on, hab, r);
+}
+
+/* =====================================================
+   MODO DE PRUEBAS (resultados medibles para el informe)
+   ===================================================== */
+let pruebas = {};
+try { pruebas = JSON.parse(localStorage.getItem('lumiPruebas') || '{}') || {}; } catch (e) { pruebas = {}; }
+const claveOrden = (on, hab) => (on ? '1' : '0') + hab;
+const textoClave = c => nombreOrden(c[0] === '1', c.slice(1));
+function llenarObjetivos() {
+  const sel = $('selObjetivo');
+  [true, false].forEach(on => ['sala', 'cocina', 'cuarto', 'bano', 'todas'].forEach(h => {
+    const o = document.createElement('option');
+    o.value = claveOrden(on, h);
+    o.textContent = nombreOrden(on, h);
+    sel.appendChild(o);
+  }));
+}
+llenarObjetivos();
+function guardarPruebas() { try { localStorage.setItem('lumiPruebas', JSON.stringify(pruebas)); } catch (e) {} }
+function pintarPruebas() {
+  const cuerpo = $('pruebaCuerpo');
+  cuerpo.innerHTML = '';
+  Object.keys(pruebas).sort().forEach(k => {
+    const [m, c] = k.split('|');
+    const p = pruebas[k];
+    const pct = p.n ? Math.round(100 * p.a / p.n) : 0;
+    const tr = document.createElement('tr');
+    [MOTORES[m] ? MOTORES[m].nombre : m, textoClave(c), p.n, p.a, pct + '%'].forEach(t => {
+      const td = document.createElement('td'); td.textContent = t; tr.appendChild(td);
+    });
+    cuerpo.appendChild(tr);
+  });
+}
+// acierto = Lumi entendió justo la orden elegida; si no, fallo (otra orden, poca confianza o sin reconocer)
+function contarPrueba(acierto, detalle) {
+  if (!$('chkPrueba').checked) return;
+  const k = modo + '|' + $('selObjetivo').value;
+  const p = pruebas[k] || (pruebas[k] = { n: 0, a: 0 });
+  p.n++; if (acierto) p.a++;
+  guardarPruebas(); pintarPruebas();
+  log('Prueba ' + (acierto ? '✓ acierto' : '✗ fallo') + ' (' + textoClave($('selObjetivo').value) + '): ' + detalle);
+}
+$('btnBorrarPruebas').onclick = () => {
+  if (!confirm('¿Borrar todos los resultados de las pruebas?')) return;
+  pruebas = {}; guardarPruebas(); pintarPruebas();
+};
+$('btnCsv').onclick = () => {
+  const filas = [['modo', 'orden', 'intentos', 'aciertos', 'porcentaje']];
+  Object.keys(pruebas).sort().forEach(k => {
+    const [m, c] = k.split('|'), p = pruebas[k];
+    filas.push([MOTORES[m] ? MOTORES[m].nombre : m, textoClave(c), p.n, p.a, p.n ? Math.round(100 * p.a / p.n) : 0]);
+  });
+  const csv = '\ufeff' + filas.map(f => f.map(x => '"' + String(x).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'lumi-pruebas.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+
 let bleDisp = null, bleChar = null;
 const BLE_SERVICIO = 0xFFE0, BLE_CARACTERISTICA = 0xFFE1;
 
@@ -844,10 +1098,16 @@ async function conectarBluetooth() {
     const servidor = await bleDisp.gatt.connect();
     const servicio = await servidor.getPrimaryService(BLE_SERVICIO);
     bleChar = await servicio.getCharacteristic(BLE_CARACTERISTICA);
+    try {   // el HM-10 avisa por notificaciones lo que el Arduino escribe
+      const decBle = new TextDecoder();
+      bleChar.addEventListener('characteristicvaluechanged', ev => alLlegarDatos(decBle.decode(ev.target.value)));
+      await bleChar.startNotifications();
+    } catch (e) { log('No pude activar las notificaciones Bluetooth: ' + e.message); }
     ficha('fichaArduino', 'txtArduino', 'Bluetooth', 'ok');
     etiquetaBtn('btnBT', 'Desconectar Bluetooth', 'Desconectar', true);
     log('Bluetooth listo: ' + (bleDisp.name || 'HM-10'));
     decir('Bluetooth conectado. Ya puedo encender las luces de verdad.');
+    consultarEstado();
   } catch (e) {
     log('No se pudo conectar por Bluetooth: ' + e.message);
     ficha('fichaArduino', 'txtArduino', 'sin conectar', '');
@@ -856,7 +1116,7 @@ async function conectarBluetooth() {
 }
 function limpiarBluetooth() {
   if (bleDisp) bleDisp.removeEventListener('gattserverdisconnected', alCaerBluetooth);
-  bleDisp = null; bleChar = null;
+  bleDisp = null; bleChar = null; firmwareConfirma = null; bufferEntrada = '';
   etiquetaBtn('btnBT', 'Conectar Bluetooth', 'Bluetooth', false);
 }
 function alCaerBluetooth() {
@@ -876,8 +1136,8 @@ $('btnBT').onclick = () => bleChar ? desconectarBluetooth() : (puerto ? log('Pri
 // Cada dispositivo muestra solo lo que su navegador puede hacer
 if (!('serial' in navigator)) $('btnArduino').hidden = true;
 if (!('bluetooth' in navigator)) $('btnBT').hidden = true;
-$('btnOn').onclick  = () => enviar(true, 'todas');
-$('btnOff').onclick = () => enviar(false, 'todas');
+$('btnOn').onclick  = () => ordenManual(true, 'todas');
+$('btnOff').onclick = () => ordenManual(false, 'todas');
 
 /* =====================================================
    INTERPRETAR ÓRDENES (modos Vosk y Navegador: llegan como texto)
@@ -886,7 +1146,7 @@ function normalizar(str) {
   return str.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
 // Variantes con las que el reconocedor puede escribir «Lumi»
-const RE_WAKE = /\b(lumi|lumy|lummy|loomi|luni|lomi|lumis|lumie|lunes|lumen|lu mi|lui mi)\b/;
+const RE_WAKE = /\b(oye|lumi|lumy|lummy|loomi|luni|lomi|lumis|lumie|lunes|lumen|lu mi|lui mi)\b/;   // «Oye» es opcional si dices «Lumi», y viceversa
 // En Vosk también vale «Oye»: es una palabra que el modelo sí conoce, aunque no conozca «Lumi»
 const RE_WAKE_VOSK = /\b(oye|lumi|lumy|lummy|loomi|luni|lomi|lumis|lumie|lunes|lumen|lu mi|lui mi)\b/;
 
@@ -895,7 +1155,7 @@ function interpretarComando(textoCrudo) {
 
   const reWake = modo === 'vosk' ? RE_WAKE_VOSK : RE_WAKE;
   if ($('chkWake').checked && !reWake.test(t)) {
-    return { ignorado: true, razon: modo === 'vosk' ? 'No empezaste con «Oye Lumi» (o «Oye») al dar la orden.' : 'No dijiste «Lumi» al dar la orden.' };
+    return { ignorado: true, ambiente: true, razon: modo === 'vosk' ? 'No empezaste con «Oye Lumi» (o «Oye») al dar la orden.' : 'No dijiste «Lumi» ni «Oye» al dar la orden.' };
   }
 
   // Comandos especiales estilo Harry Potter
@@ -904,8 +1164,8 @@ function interpretarComando(textoCrudo) {
 
   // Intención: encender o apagar
   let on = null;
-  if (/\b(enciende|encender|prende|prender|activa|activar|ilumina|iluminar|abre)\b/.test(t)) on = true;
-  else if (/\b(apaga|apagar|desactiva|desactivar|cierra|oscurece|quita)\b/.test(t)) on = false;
+  if (/\b(enciende|encender|enciendeme|encienda|enciendan|prende|prender|prendeme|prenda|activa|activar|ilumina|iluminar|abre|pon|poner|dale)\b/.test(t)) on = true;
+  else if (/\b(apaga|apagar|apagame|apague|apaguen|desactiva|desactivar|cierra|oscurece|quita)\b/.test(t)) on = false;
   if (on === null) return { ignorado: true, razon: 'No identifiqué si querías «encender» o «apagar».' };
 
   // Lugar de la casa
@@ -923,10 +1183,23 @@ function interpretarComando(textoCrudo) {
 // Se llama solo cuando la orden llega por voz: aquí Lumi responde.
 async function ordenPorVoz(a, etiqueta, detalle) {
   $('escuche').textContent = 'Escuché: «' + etiqueta + '» (' + detalle + ')';
-  const llego = await enviar(a.on, a.hab);
-  let texto = frase(a.on, a.hab);
-  if (!llego) texto += ' Lo hice en pantalla, pero el Arduino no está conectado.';
+  const r = await enviar(a.on, a.hab);
+  registrarOrden('Voz', a.on, a.hab, r, etiqueta);
+  let texto;
+  if (r === 'error') texto = 'No pude enviar la orden al Arduino. Revisa la conexión.';
+  else if (r === 'sin-confirmar') texto = 'Envié la orden, pero el Arduino no me confirmó que la luz cambió. Revisa la conexión.';
+  else {
+    texto = frase(a.on, a.hab);
+    if (r === 'pantalla') texto += ' Lo hice en pantalla, pero el Arduino no está conectado.';
+  }
   responder(texto);
+}
+
+// No entendí o no estoy segura: Lumi lo dice (sin hablar en voz alta) y el orbe se «sacude» un instante
+function mostrarDuda(texto) {
+  decir(texto);
+  setOrbe('duda');
+  setTimeout(orbeEnReposo, 1100);
 }
 
 // Evita ejecutar dos veces la misma orden (una al vuelo y otra al terminar la frase)
@@ -946,6 +1219,9 @@ function procesarTexto(texto, conf, parcial) {
       $('escuche').textContent = 'Oí: «' + texto + '»';
       $('decision').textContent = cmd.razon;
       log('Ignorado («' + texto + '»): ' + cmd.razon);
+      contarPrueba(false, 'ignorada: ' + cmd.razon);
+      // Si no era una conversación de fondo (sí me hablaron), Lumi explica qué le faltó
+      if (!cmd.ambiente) mostrarDuda('Te oí «' + texto + '», pero no entendí la orden. ' + cmd.razon + ' Prueba con «Oye Lumi, enciende la cocina».');
     }
     return false;
   }
@@ -956,10 +1232,13 @@ function procesarTexto(texto, conf, parcial) {
     const msg = 'Oí «' + texto + '» (' + pct + '%), menos que tu mínimo de ' + $('umbral').value + '%.';
     $('decision').textContent = msg;
     log(msg);
+    contarPrueba(false, 'confianza baja (' + pct + '%)');
+    mostrarDuda('No estoy segura de haberte entendido (' + pct + '%). Repite la orden más despacio y cerca del micrófono.');
     return false;
   }
   ultimaOrden = { clave, t: ahora };
   $('decision').textContent = '';
+  contarPrueba(clave === $('selObjetivo').value, 'entendí «' + texto + '»');
   const detalle = parcial ? 'al vuelo' : pct + '%';
   log('Orden aceptada: «' + texto + '» (' + detalle + ')');
   ordenPorVoz(cmd, texto, detalle);
@@ -1092,7 +1371,7 @@ function alResultadoVosk(r) {
   parcialVosk = ''; contParcialVosk = 0;
   if (estaSordo() || !r) return;
   const texto = (r.text || '').replace(/\[unk\]/g, ' ').replace(/\s+/g, ' ').trim();
-  if (!texto) { anillo(0); return; }
+  if (!texto) { anillo(0); contarPrueba(false, 'no reconocí nada'); return; }
   const palabras = Array.isArray(r.result) ? r.result : [];
   const conf = palabras.length ? palabras.reduce((s, w) => s + (w.conf || 0), 0) / palabras.length : 0.9;
   procesarTexto(texto, conf, false);
@@ -1156,7 +1435,8 @@ async function iniciarWeb() {
         etiquetaBtn('btnEscuchar', 'Activar a Lumi', 'Escuchar', false);
         decir('Necesito permiso para usar el micrófono. Actívalo en la barra de direcciones del navegador.');
       } else if (e.error === 'network') {
-        decir('El reconocimiento del navegador necesita internet y no lo encuentro. Prueba el modo «Sin internet (Vosk)».');
+        decir('El reconocimiento del navegador necesita internet y no lo encuentro. Paso al modo sin internet (Vosk).');
+        if (modo === 'web') cambiarModo('vosk');
       }
     };
     reconWeb.onend = () => {
@@ -1215,7 +1495,7 @@ async function cambiarModo(nuevo) {
   try { localStorage.setItem('lumiModo', modo); } catch (e) {}
   pintarModo();
   anillo(0);
-  decir('Ahora te escucho con: ' + MOTORES[modo].nombre + '.');
+  decir('Ahora te escucho con: ' + MOTORES[modo].nombre + '.' + (modo === 'web' && !navigator.onLine ? ' Ojo: ahora no hay internet y este modo la necesita.' : ''));
   log('Modo de voz: ' + MOTORES[modo].nombre);
   if (estabaEscuchando) iniciarEscucha();
 }
@@ -1280,6 +1560,24 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
   navigator.serviceWorker.register('sw.js').catch(e => log('No se pudo preparar el modo sin conexión: ' + e.message));
 }
 pintarModo();
+pintarPruebas();
+
+// Indicador de internet: el proyecto debe funcionar sin red, así que se ve siempre
+function pintarRed() {
+  const on = navigator.onLine;
+  $('fichaRed').className = 'ficha ' + (on ? 'ok' : 'red-off');
+  $('txtRed').textContent = on ? 'sí' : 'no';
+}
+pintarRed();
+window.addEventListener('online', () => { pintarRed(); log('Volvió el internet.'); });
+window.addEventListener('offline', () => {
+  pintarRed();
+  log('Se perdió el internet.');
+  if (modo === 'web') { decir('Se fue el internet. Paso al modo sin internet (Vosk).'); cambiarModo('vosk'); }
+});
+
+// La primera vez, el panel «Cómo usar» aparece abierto
+try { if (!localStorage.getItem('lumiAyudaVista')) { $('ayuda').open = true; localStorage.setItem('lumiAyudaVista', '1'); } } catch (e) {}
 if (location.protocol === 'file:') {
   $('aviso').hidden = false;
   log('⚠ Página abierta como archivo (file://). Para Vosk usa Live Server.');

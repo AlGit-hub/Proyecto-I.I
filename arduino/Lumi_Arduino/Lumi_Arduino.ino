@@ -1,9 +1,12 @@
 /*
   Lumi · Iluminación inteligente
-  Recibe letras desde la página (USB o Bluetooth HM-10) y enciende/apaga los LED.
+  Recibe letras desde la página (USB o Bluetooth HM-10), enciende/apaga los LED
+  y RESPONDE con el estado real de cada luz para que la página lo confirme.
 
   Letras:   S/s = sala     C/c = cocina    Q/q = cuarto    B/b = baño
             1   = encender todas           0   = apagar todas
+            ?   = informar el estado de todas las luces
+  Respuestas (una línea por habitación): S1 S0 C1 C0 Q1 Q0 B1 B0
 
   Conexiones:
     LED sala   -> D4   (con resistencia de 220 ohm a GND)
@@ -20,17 +23,18 @@ const int PIN_COCINA = 5;
 const int PIN_CUARTO = 6;
 const int PIN_BANO   = 7;
 
+const int  PINES[4]  = {PIN_SALA, PIN_COCINA, PIN_CUARTO, PIN_BANO};
+const char LETRAS[4] = {'S', 'C', 'Q', 'B'};
+
 const int BT_RX = 2;    // recibe desde el TX del HM-10
 const int BT_TX = 3;    // envía al RX del HM-10
 SoftwareSerial bluetooth(BT_RX, BT_TX);
 
 void setup() {
-  pinMode(PIN_SALA, OUTPUT);
-  pinMode(PIN_COCINA, OUTPUT);
-  pinMode(PIN_CUARTO, OUTPUT);
-  pinMode(PIN_BANO, OUTPUT);
-  todas(LOW);
-
+  for (int i = 0; i < 4; i++) {
+    pinMode(PINES[i], OUTPUT);
+    digitalWrite(PINES[i], LOW);
+  }
   Serial.begin(9600);      // USB (la página usa 9600)
   bluetooth.begin(9600);   // HM-10
 }
@@ -53,24 +57,34 @@ void atenderBluetooth(char c) {
   atender(c);
 }
 
+// Cuenta a la página (por USB y por Bluetooth) cómo quedó una luz: por ejemplo «C1»
+void informar(int i) {
+  char m[3] = { LETRAS[i], (digitalRead(PINES[i]) == HIGH) ? '1' : '0', '\n' };
+  Serial.write(m, 3);
+  bluetooth.write(m, 3);
+}
+
+void poner(int i, int estado) {
+  digitalWrite(PINES[i], estado);
+  informar(i);
+}
+
 void atender(char c) {
   switch (c) {
-    case 'S': digitalWrite(PIN_SALA, HIGH);   break;
-    case 's': digitalWrite(PIN_SALA, LOW);    break;
-    case 'C': digitalWrite(PIN_COCINA, HIGH); break;
-    case 'c': digitalWrite(PIN_COCINA, LOW);  break;
-    case 'Q': digitalWrite(PIN_CUARTO, HIGH); break;
-    case 'q': digitalWrite(PIN_CUARTO, LOW);  break;
-    case 'B': digitalWrite(PIN_BANO, HIGH);   break;
-    case 'b': digitalWrite(PIN_BANO, LOW);    break;
-    case '1': todas(HIGH);                    break;
-    case '0': todas(LOW);                     break;
+    case 'S': poner(0, HIGH); break;
+    case 's': poner(0, LOW);  break;
+    case 'C': poner(1, HIGH); break;
+    case 'c': poner(1, LOW);  break;
+    case 'Q': poner(2, HIGH); break;
+    case 'q': poner(2, LOW);  break;
+    case 'B': poner(3, HIGH); break;
+    case 'b': poner(3, LOW);  break;
+    case '1': todas(HIGH);    break;
+    case '0': todas(LOW);     break;
+    case '?': for (int i = 0; i < 4; i++) informar(i); break;
   }
 }
 
 void todas(int estado) {
-  digitalWrite(PIN_SALA, estado);
-  digitalWrite(PIN_COCINA, estado);
-  digitalWrite(PIN_CUARTO, estado);
-  digitalWrite(PIN_BANO, estado);
+  for (int i = 0; i < 4; i++) poner(i, estado);
 }

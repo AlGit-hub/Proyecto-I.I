@@ -106,3 +106,16 @@ SI ALGO FALLA
       direcciones y permite el micrófono.
   Aviso naranja arriba de la página      Abriste el archivo con doble clic.
       Usa Live Server (paso 1).
+
+
+CONFIRMACIÓN DESDE EL ARDUINO (nuevo)
+  Carga arduino/Lumi_Arduino.ino en la placa. Cada vez que cambia una luz, el
+  Arduino responde S1, S0, C1, C0, Q1, Q0, B1, B0 (sala, cocina, cuarto, baño).
+  La página pinta ese estado real y, al conectar, le pregunta con «?» cómo están
+  las luces. Si el sketch es el antiguo, la página lo avisa en el registro y las
+  luces quedan marcadas «sin confirmación».
+  Pines: sala D4, cocina D5, cuarto D6, baño D7. HM-10: TX->D2, RX->D3 (divisor 1k/2k).
+
+MODO DE PRUEBAS
+  Panel «Modo de pruebas»: elige la orden, actívalo y habla. Cuenta intentos y
+  aciertos por modo de voz y exporta un CSV para la sección de resultados del informe.
