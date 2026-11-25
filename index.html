@@ -249,7 +249,7 @@
   details.ajustes { border-color: var(--borde-vidrio); box-shadow: var(--brillo); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 
   @media (max-width: 860px) {
-    /* Más compacto: que el plano completo (sala, cocina, cuarto y baño) quepa en pantalla */
+    /* Más compacto: que el plano completo (lavadero, cocina, cuarto y baño) quepa en pantalla */
     .pagina { padding-top: 10px; }
     .marca h1 { font-size: 1.6rem; }
     .marca p { display: none; }
@@ -518,7 +518,7 @@ table.tabla th { color: var(--tenue); font-weight: 500; }
           <li>Conecta el Arduino: <b>Arduino</b> (cable USB) o <b>Bluetooth</b> (módulo HM-10, Chrome en Android). Verás el estado real de cada luz en el plano.</li>
           <li>Elige cómo te escucha: <b>Sin internet (Vosk)</b> o <b>Navegador</b> (necesita internet).</li>
           <li>Pulsa <b>Activar a Lumi</b> y permite el micrófono.</li>
-          <li>Habla: <q>Oye Lumi, enciende la cocina</q>, <q>Oye, apaga la sala</q>, <q>Oye Lumi, apaga todo</q>.</li>
+          <li>Habla: <q>Oye Lumi, enciende la cocina</q>, <q>Oye, apaga el lavadero</q>, <q>Oye Lumi, apaga todo</q>.</li>
         </ol>
         <p class="nota">Los botones del plano y del dock siempre funcionan, aunque la voz falle. Si el anillo no llega a la marca blanca, Lumi no ejecuta la orden: repítela más despacio o baja la confianza mínima en Ajustes.</p>
       </div>
@@ -538,16 +538,25 @@ table.tabla th { color: var(--tenue); font-weight: 500; }
     <details class="panel" id="panelPruebas">
       <summary>Modo de pruebas (para el informe)</summary>
       <div class="panel-cuerpo">
-        <p class="nota" style="margin-top:0">Elige la orden que vas a decir y actívalo. Cada intento de voz cuenta como acierto si Lumi entendió justo esa orden, y como fallo si entendió otra, no llegó a la confianza mínima o no reconoció nada. Espera unos 3 segundos entre intentos (Lumi ignora la misma orden repetida antes de 2 s). Los resultados quedan guardados por modo de voz.</p>
+        <p class="nota" style="margin-top:0">Elige la orden que vas a decir y actívalo. Cada intento de voz cuenta como acierto si Lumi entendió justo esa orden, y como fallo si entendió otra, no llegó a la confianza mínima o no reconoció nada. Espera unos 3 segundos entre intentos (Lumi ignora la misma orden repetida antes de 2 s). Los resultados quedan guardados por modo de voz y por condición. Además se mide la <b>latencia</b> (ms desde que Lumi entiende la orden hasta que el Arduino confirma) y la <b>estabilidad de la conexión</b> (USB o Bluetooth), tanto con voz como con los botones.</p>
         <div class="fila-prueba">
           <label class="fila"><input type="checkbox" id="chkPrueba"><span class="txt-check">Activar modo de pruebas</span></label>
           <select id="selObjetivo" aria-label="Orden que voy a probar"></select>
-          <button class="btn chico" id="btnCsv" type="button">Descargar CSV</button>
+          <select id="selRuido" aria-label="Condición acústica">
+            <option value="silencio">Silencio</option>
+            <option value="ruido">Con ruido</option>
+          </select>
+          <button class="btn chico" id="btnCsv" type="button">CSV de voz</button>
+          <button class="btn chico" id="btnCsvConexion" type="button">CSV de conexión</button>
           <button class="btn chico" id="btnBorrarPruebas" type="button">Borrar resultados</button>
         </div>
         <table class="tabla" aria-label="Resultados de pruebas">
-          <thead><tr><th>Modo</th><th>Orden</th><th>Intentos</th><th>Aciertos</th><th>% acierto</th></tr></thead>
+          <thead><tr><th>Modo</th><th>Condición</th><th>Orden</th><th>Intentos</th><th>Aciertos</th><th>% acierto</th><th>Latencia prom. (ms)</th></tr></thead>
           <tbody id="pruebaCuerpo"></tbody>
+        </table>
+        <table class="tabla" aria-label="Estabilidad de la conexión">
+          <thead><tr><th>Conexión</th><th>Órdenes enviadas</th><th>Confirmadas</th><th>% confirmadas</th><th>Latencia prom. (ms)</th><th>Máx. (ms)</th></tr></thead>
+          <tbody id="conexCuerpo"></tbody>
         </table>
       </div>
     </details>
@@ -659,7 +668,7 @@ function cargarScript(rutas) {
    y su nombre en las frases de voz.
    ===================================================== */
 const HABITACIONES = {
-  sala:   { on: 'S', off: 's', pin: 'D4', articulo: 'la sala' },
+  sala:   { on: 'S', off: 's', pin: 'D4', articulo: 'el lavadero', nombre: 'Lavadero' },   // «sala» es el identificador interno (letra S, pin D4); en pantalla y en voz es el lavadero
   cocina: { on: 'C', off: 'c', pin: 'D5', articulo: 'la cocina' },
   cuarto: { on: 'Q', off: 'q', pin: 'D6', articulo: 'el cuarto' },
   bano:   { on: 'B', off: 'b', pin: 'D7', articulo: 'el baño', nombre: 'Baño' }
@@ -874,7 +883,7 @@ async function desconectarArduino() {
 // hab: 'sala' | 'cocina' | 'cuarto' | 'bano' | 'todas'
 /* ---- Confirmación real desde el Arduino ----
    El sketch responde con una línea por habitación: S1, s... (letra en mayúscula + 1 o 0):
-   S=sala, C=cocina, Q=cuarto, B=baño. La página pinta lo que el Arduino dice, no lo que ella supone. */
+   S=lavadero, C=cocina, Q=cuarto, B=baño. La página pinta lo que el Arduino dice, no lo que ella supone. */
 const LETRA_HAB = { S: 'sala', C: 'cocina', Q: 'cuarto', B: 'bano' };
 const confHora = {};            // última hora en que el Arduino confirmó cada habitación
 let firmwareConfirma = null;    // null = aún no sé · true = el sketch responde · false = sketch antiguo (no responde)
@@ -952,7 +961,7 @@ function esperarConfirmacion(hab, t0, ms) {
 
 // Cambia la luz en pantalla y la envía al Arduino.
 // Devuelve 'confirmado' | 'sin-confirmar' | 'enviado' (sketch antiguo) | 'pantalla' (sin Arduino) | 'error'
-async function enviar(on, hab) {
+async function enviar(on, hab, origen) {
   const verbo = on ? 'ENCENDER' : 'APAGAR';
   if (!hayArduino()) {
     pintarLuz(hab, on, 'simulada');
@@ -972,8 +981,14 @@ async function enviar(on, hab) {
   }
   if (firmwareConfirma === false) { pintarLuz(hab, on, 'sin confirmación'); return 'enviado'; }
   const ok = await esperarConfirmacion(hab, t0, 1500);
-  if (ok) { log('Confirmado por el Arduino: ' + hab); return 'confirmado'; }
+  if (ok) {
+    const lat = Date.now() - t0;
+    log('Confirmado por el Arduino: ' + hab + ' (' + lat + ' ms)');
+    medirEnvio(origen, lat, true);
+    return 'confirmado';
+  }
   if (firmwareConfirma === null) firmwareConfirma = false;   // nunca respondió: sketch antiguo
+  else medirEnvio(origen, null, false);
   pintarLuz(hab, on, 'sin confirmar');
   log('⚠ El Arduino no confirmó «' + hab + '». Revisa la conexión o carga el sketch nuevo.');
   return 'sin-confirmar';
@@ -1016,7 +1031,7 @@ function registrarOrden(origen, on, hab, resultado, oido) {
   $('histVacio').hidden = true;
 }
 async function ordenManual(on, hab) {
-  const r = await enviar(on, hab);
+  const r = await enviar(on, hab, 'Botón');
   registrarOrden('Botón', on, hab, r);
 }
 
@@ -1025,6 +1040,9 @@ async function ordenManual(on, hab) {
    ===================================================== */
 let pruebas = {};
 try { pruebas = JSON.parse(localStorage.getItem('lumiPruebas') || '{}') || {}; } catch (e) { pruebas = {}; }
+let conex = {};   // estabilidad de la conexión: { 'USB': {n, ok, sum, max}, 'Bluetooth': {...} }
+try { conex = JSON.parse(localStorage.getItem('lumiConexion') || '{}') || {}; } catch (e) { conex = {}; }
+const NOMBRE_COND = { silencio: 'Silencio', ruido: 'Con ruido' };
 const claveOrden = (on, hab) => (on ? '1' : '0') + hab;
 const textoClave = c => nombreOrden(c[0] === '1', c.slice(1));
 function llenarObjetivos() {
@@ -1037,25 +1055,52 @@ function llenarObjetivos() {
   }));
 }
 llenarObjetivos();
-function guardarPruebas() { try { localStorage.setItem('lumiPruebas', JSON.stringify(pruebas)); } catch (e) {} }
+function guardarPruebas() {
+  try { localStorage.setItem('lumiPruebas', JSON.stringify(pruebas)); localStorage.setItem('lumiConexion', JSON.stringify(conex)); } catch (e) {}
+}
+const promLat = p => (p && p.latN) ? Math.round(p.lat / p.latN) : '';
+// Cada orden enviada con el modo de pruebas activo: cuenta la conexión (USB/Bluetooth) y, si fue por voz, la latencia de ese modo
+function medirEnvio(origen, lat, confirmada) {
+  if (!$('chkPrueba').checked) return;
+  const tipo = bleChar ? 'Bluetooth' : 'USB';
+  const c = conex[tipo] || (conex[tipo] = { n: 0, ok: 0, sum: 0, max: 0 });
+  c.n++;
+  if (confirmada) { c.ok++; c.sum += lat; c.max = Math.max(c.max, lat); }
+  if (confirmada && origen === 'Voz') {
+    const k = modo + '|' + $('selObjetivo').value + '|' + $('selRuido').value;
+    const p = pruebas[k] || (pruebas[k] = { n: 0, a: 0 });
+    p.lat = (p.lat || 0) + lat; p.latN = (p.latN || 0) + 1;
+  }
+  guardarPruebas(); pintarPruebas();
+}
 function pintarPruebas() {
   const cuerpo = $('pruebaCuerpo');
   cuerpo.innerHTML = '';
   Object.keys(pruebas).sort().forEach(k => {
-    const [m, c] = k.split('|');
+    const [m, c, r] = k.split('|');
     const p = pruebas[k];
     const pct = p.n ? Math.round(100 * p.a / p.n) : 0;
     const tr = document.createElement('tr');
-    [MOTORES[m] ? MOTORES[m].nombre : m, textoClave(c), p.n, p.a, pct + '%'].forEach(t => {
+    [MOTORES[m] ? MOTORES[m].nombre : m, NOMBRE_COND[r] || '—', textoClave(c), p.n, p.a, pct + '%', promLat(p)].forEach(t => {
       const td = document.createElement('td'); td.textContent = t; tr.appendChild(td);
     });
     cuerpo.appendChild(tr);
+  });
+  const cc = $('conexCuerpo');
+  cc.innerHTML = '';
+  Object.keys(conex).sort().forEach(tipo => {
+    const c = conex[tipo];
+    const tr = document.createElement('tr');
+    [tipo, c.n, c.ok, c.n ? Math.round(100 * c.ok / c.n) + '%' : '', c.ok ? Math.round(c.sum / c.ok) : '', c.ok ? c.max : ''].forEach(t => {
+      const td = document.createElement('td'); td.textContent = t; tr.appendChild(td);
+    });
+    cc.appendChild(tr);
   });
 }
 // acierto = Lumi entendió justo la orden elegida; si no, fallo (otra orden, poca confianza o sin reconocer)
 function contarPrueba(acierto, detalle) {
   if (!$('chkPrueba').checked) return;
-  const k = modo + '|' + $('selObjetivo').value;
+  const k = modo + '|' + $('selObjetivo').value + '|' + $('selRuido').value;
   const p = pruebas[k] || (pruebas[k] = { n: 0, a: 0 });
   p.n++; if (acierto) p.a++;
   guardarPruebas(); pintarPruebas();
@@ -1063,20 +1108,31 @@ function contarPrueba(acierto, detalle) {
 }
 $('btnBorrarPruebas').onclick = () => {
   if (!confirm('¿Borrar todos los resultados de las pruebas?')) return;
-  pruebas = {}; guardarPruebas(); pintarPruebas();
+  pruebas = {}; conex = {}; guardarPruebas(); pintarPruebas();
 };
-$('btnCsv').onclick = () => {
-  const filas = [['modo', 'orden', 'intentos', 'aciertos', 'porcentaje']];
-  Object.keys(pruebas).sort().forEach(k => {
-    const [m, c] = k.split('|'), p = pruebas[k];
-    filas.push([MOTORES[m] ? MOTORES[m].nombre : m, textoClave(c), p.n, p.a, p.n ? Math.round(100 * p.a / p.n) : 0]);
-  });
+function descargarCsv(filas, nombre) {
   const csv = '\ufeff' + filas.map(f => f.map(x => '"' + String(x).replace(/"/g, '""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-  a.download = 'lumi-pruebas.csv';
+  a.download = nombre;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+$('btnCsv').onclick = () => {
+  const filas = [['modo', 'condicion', 'orden', 'intentos', 'aciertos', 'porcentaje', 'latencia_prom_ms']];
+  Object.keys(pruebas).sort().forEach(k => {
+    const [m, c, r] = k.split('|'), p = pruebas[k];
+    filas.push([MOTORES[m] ? MOTORES[m].nombre : m, NOMBRE_COND[r] || '', textoClave(c), p.n, p.a, p.n ? Math.round(100 * p.a / p.n) : 0, promLat(p)]);
+  });
+  descargarCsv(filas, 'lumi-pruebas-voz.csv');
+};
+$('btnCsvConexion').onclick = () => {
+  const filas = [['conexion', 'ordenes', 'confirmadas', 'porcentaje', 'latencia_prom_ms', 'latencia_max_ms']];
+  Object.keys(conex).sort().forEach(t => {
+    const c = conex[t];
+    filas.push([t, c.n, c.ok, c.n ? Math.round(100 * c.ok / c.n) : 0, c.ok ? Math.round(c.sum / c.ok) : '', c.ok ? c.max : '']);
+  });
+  descargarCsv(filas, 'lumi-pruebas-conexion.csv');
 };
 
 let bleDisp = null, bleChar = null;
@@ -1170,12 +1226,12 @@ function interpretarComando(textoCrudo) {
 
   // Lugar de la casa
   let hab = null;
-  if (/\b(sala|salon|living|estancia)\b/.test(t)) hab = 'sala';
+  if (/\b(lavadero|lavaderos|lavanderia|ropas)\b/.test(t)) hab = 'sala';
   else if (/\b(cocina)\b/.test(t)) hab = 'cocina';
   else if (/\b(cuarto|habitacion|pieza|dormitorio|alcoba)\b/.test(t)) hab = 'cuarto';
   else if (/\b(bano|banos|aseo|sanitario|wc)\b/.test(t)) hab = 'bano';
   else if (/\b(todo|toda|todas|todos|casa|luces)\b/.test(t)) hab = 'todas';
-  if (!hab) return { ignorado: true, razon: 'No mencionaste qué lugar (sala, cocina, cuarto, baño o todo).' };
+  if (!hab) return { ignorado: true, razon: 'No mencionaste qué lugar (lavadero, cocina, cuarto, baño o todo).' };
 
   return { on, hab };
 }
@@ -1183,7 +1239,7 @@ function interpretarComando(textoCrudo) {
 // Se llama solo cuando la orden llega por voz: aquí Lumi responde.
 async function ordenPorVoz(a, etiqueta, detalle) {
   $('escuche').textContent = 'Escuché: «' + etiqueta + '» (' + detalle + ')';
-  const r = await enviar(a.on, a.hab);
+  const r = await enviar(a.on, a.hab, 'Voz');
   registrarOrden('Voz', a.on, a.hab, r, etiqueta);
   let texto;
   if (r === 'error') texto = 'No pude enviar la orden al Arduino. Revisa la conexión.';
@@ -1251,7 +1307,7 @@ function procesarTexto(texto, conf, parcial) {
 // Lista cerrada de frases: Vosk solo elige entre estas (o «[unk]» si no reconoce nada).
 // Si alguna palabra (por ejemplo «lumi») no está en el vocabulario del modelo, Vosk la ignora sin fallar.
 const VERBOS_V = ['enciende', 'prende', 'apaga'];
-const LUGARES_V = ['la sala', 'la cocina', 'el cuarto', 'el baño', 'todo', 'todas las luces', 'la luz de la sala', 'la luz de la cocina', 'la luz del cuarto', 'la luz del baño'];
+const LUGARES_V = ['el lavadero', 'la cocina', 'el cuarto', 'el baño', 'todo', 'todas las luces', 'la luz del lavadero', 'la luz de la cocina', 'la luz del cuarto', 'la luz del baño'];
 let FRASES_VOSK = new Set();
 let GRAMATICA_VOSK = '';
 // Con la palabra de activación obligatoria, TODAS las frases empiezan por «oye»: así la voz de Lumi
@@ -1459,8 +1515,8 @@ const MOTORES = {
   web:  { nombre: 'Navegador',         iniciar: iniciarWeb,  parar: pararWeb }
 };
 const EJEMPLOS = {
-  vosk: 'Prueba con <q>Oye Lumi, enciende la cocina</q>, <q>Oye, apaga la sala</q> o <q>Oye Lumi, apaga todo</q>.',
-  web:  'Prueba con <q>Oye Lumi, enciende la cocina</q>, <q>Lumi, apaga la sala</q>, <q>Lumi, apaga todo</q> o incluso <q>Lumi, lumos máxima</q>.'
+  vosk: 'Prueba con <q>Oye Lumi, enciende la cocina</q>, <q>Oye, apaga el lavadero</q> o <q>Oye Lumi, apaga todo</q>.',
+  web:  'Prueba con <q>Oye Lumi, enciende la cocina</q>, <q>Lumi, apaga el lavadero</q>, <q>Lumi, apaga todo</q> o incluso <q>Lumi, lumos máxima</q>.'
 };
 const ANILLO_TXT = ' El anillo muestra qué tan segura estoy de lo que oí; la marca blanca es tu mínimo.';
 const NOTAS = {

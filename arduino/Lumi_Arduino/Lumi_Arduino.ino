@@ -3,13 +3,13 @@
   Recibe letras desde la página (USB o Bluetooth HM-10), enciende/apaga los LED
   y RESPONDE con el estado real de cada luz para que la página lo confirme.
 
-  Letras:   S/s = sala     C/c = cocina    Q/q = cuarto    B/b = baño
+  Letras:   S/s = lavadero    C/c = cocina    Q/q = cuarto    B/b = baño
             1   = encender todas           0   = apagar todas
             ?   = informar el estado de todas las luces
   Respuestas (una línea por habitación): S1 S0 C1 C0 Q1 Q0 B1 B0
 
   Conexiones:
-    LED sala   -> D4   (con resistencia de 220 ohm a GND)
+    LED lavadero -> D4   (con resistencia de 220 ohm a GND)
     LED cocina -> D5
     LED cuarto -> D6
     LED baño   -> D7
